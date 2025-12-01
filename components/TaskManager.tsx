@@ -239,10 +239,10 @@ export default function TaskManager({ currentUser }: TaskManagerProps) {
                     {task.status === 'completed' ? <CheckCircle size={24} /> : <Circle size={24} />}
                   </button>
                   <div className="flex-1">
-                    <h4 className={`font-semibold text-lg ${task.status === 'completed' ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
+                    <h4 className={`font-semibold text-lg break-words ${task.status === 'completed' ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
                       {task.title}
                     </h4>
-                    <p className="text-gray-600 text-sm mt-1">{task.description}</p>
+                    <p className="text-gray-600 text-sm mt-1 break-words whitespace-pre-wrap">{task.description}</p>
 
                     <div className="flex flex-wrap items-center gap-4 mt-3 text-xs text-gray-500">
                       <div className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded">

@@ -27,7 +27,10 @@ db.serialize(() => {
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE,
     password TEXT,
-    role TEXT DEFAULT 'viewer'
+    role TEXT DEFAULT 'viewer',
+    full_name TEXT,
+    phone TEXT,
+    email TEXT
   )`);
 
   // Create Index on Username
@@ -82,6 +85,33 @@ db.serialize(() => {
     if (rows && !rows.some(r => r.name === 'role')) {
       console.log("Migrating: Adding role column to users table");
       db.run("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'viewer'");
+    }
+  });
+
+  // Check for 'full_name' in users
+  db.all("PRAGMA table_info(users)", (err, rows) => {
+    if (err) console.error(err);
+    if (rows && !rows.some(r => r.name === 'full_name')) {
+      console.log("Migrating: Adding full_name column to users table");
+      db.run("ALTER TABLE users ADD COLUMN full_name TEXT");
+    }
+  });
+
+  // Check for 'phone' in users
+  db.all("PRAGMA table_info(users)", (err, rows) => {
+    if (err) console.error(err);
+    if (rows && !rows.some(r => r.name === 'phone')) {
+      console.log("Migrating: Adding phone column to users table");
+      db.run("ALTER TABLE users ADD COLUMN phone TEXT");
+    }
+  });
+
+  // Check for 'email' in users
+  db.all("PRAGMA table_info(users)", (err, rows) => {
+    if (err) console.error(err);
+    if (rows && !rows.some(r => r.name === 'email')) {
+      console.log("Migrating: Adding email column to users table");
+      db.run("ALTER TABLE users ADD COLUMN email TEXT");
     }
   });
 

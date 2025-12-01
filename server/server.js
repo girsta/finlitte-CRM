@@ -111,7 +111,10 @@ app.post('/login', loginLimiter, (req, res) => {
           user: {
             username: user.username,
             role: req.session.role,
-            isAdmin: user.role === 'admin'
+            isAdmin: user.role === 'admin',
+            full_name: user.full_name,
+            phone: user.phone,
+            email: user.email
           }
         });
       } else {
@@ -355,6 +358,46 @@ app.delete('/api/users/:id', isAuthenticated, hasRole(['admin']), (req, res) => 
     if (err) return res.status(500).json({ error: err.message });
     res.json({ message: 'User deleted' });
   });
+});
+
+// --- User Profile API (Self-Service) ---
+app.get('/api/profile', isAuthenticated, (req, res) => {
+  const userId = req.session.userId;
+  db.get('SELECT id, username, role, full_name, phone, email FROM users WHERE id = ?', [userId], (err, user) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json(user);
+  });
+});
+
+app.put('/api/profile', isAuthenticated, async (req, res) => {
+  const userId = req.session.userId;
+  const { full_name, phone, email, password } = req.body;
+
+  // Username cannot be changed here, only by admin in /api/users/:id
+
+  try {
+    if (password && password.trim() !== "") {
+      const hash = await bcrypt.hash(password, 10);
+      db.run("UPDATE users SET full_name = ?, phone = ?, email = ?, password = ? WHERE id = ?",
+        [full_name, phone, email, hash, userId],
+        function (err) {
+          if (err) return res.status(500).json({ error: err.message });
+          res.json({ message: 'Profile updated' });
+        }
+      );
+    } else {
+      db.run("UPDATE users SET full_name = ?, phone = ?, email = ? WHERE id = ?",
+        [full_name, phone, email, userId],
+        function (err) {
+          if (err) return res.status(500).json({ error: err.message });
+          res.json({ message: 'Profile updated' });
+        }
+      );
+    }
+  } catch (e) {
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
 // --- Task Management API ---

@@ -114,15 +114,31 @@ export default function CalendarView({ contracts }: CalendarViewProps) {
                   </div>
 
                   <div className="space-y-1">
-                    {dayContracts.map(c => (
-                      <div key={c.id} className="text-xs p-1.5 rounded bg-red-100 text-red-800 border border-red-200 truncate cursor-pointer hover:opacity-80" title={`${c.draudejas} - ${c.policyNo}`}>
-                        <div className="flex items-center gap-1 font-semibold">
-                          <AlertCircle size={10} />
-                          Baigiasi
+                    {dayContracts.map(c => {
+                      const expiryDate = new Date(c.galiojaIki);
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      const isPast = expiryDate < today;
+
+                      return (
+                        <div
+                          key={c.id}
+                          className={`text-xs p-1.5 rounded border truncate cursor-pointer hover:opacity-80 mb-1
+                            ${isPast
+                              ? 'bg-red-100 text-red-800 border-red-200'
+                              : 'bg-orange-100 text-orange-800 border-orange-200'
+                            }
+                          `}
+                          title={`${c.draudejas} - ${c.policyNo}`}
+                        >
+                          <div className="flex items-center gap-1 font-semibold">
+                            <AlertCircle size={10} />
+                            {isPast ? 'Pasibaigė' : 'Baigiasi'}
+                          </div>
+                          <div className="truncate">{c.draudejas}</div>
                         </div>
-                        <div className="truncate">{c.draudejas}</div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               );

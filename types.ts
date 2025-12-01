@@ -25,6 +25,9 @@ export interface User {
   username: string;
   isAdmin: boolean; // Legacy check, kept for convenience
   role: 'admin' | 'sales' | 'viewer';
+  full_name?: string;
+  phone?: string;
+  email?: string;
 }
 
 export interface HistoryEntry {
