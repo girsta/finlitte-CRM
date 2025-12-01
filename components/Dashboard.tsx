@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Contract, User, ExpiryStatus } from '../types';
-import { Menu, Plus, Search, AlertTriangle, CheckCircle, XCircle, Archive, LayoutList, Download, History } from 'lucide-react';
+import { Menu, Plus, Search, AlertTriangle, CheckCircle, XCircle, Archive, LayoutList, Download, History, Filter } from 'lucide-react';
 import ContractList from './ContractList';
 import ContractForm from './ContractForm';
 import HistoryModal from './HistoryModal';
@@ -24,11 +24,11 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   // Data State
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  
+
   // Search History State
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  
+
   // Modals
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingContract, setEditingContract] = useState<Contract | undefined>(undefined);
@@ -36,7 +36,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [notesContract, setNotesContract] = useState<Contract | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // Toggle between Active and Archived views within the Dashboard tab
   const [viewArchived, setViewArchived] = useState(false);
 
@@ -74,11 +74,11 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     // Determine endpoint based on whether we are looking at archived list 
     // BUT if we are in Calendar mode, we might want ALL active contracts.
     // For simplicity, Dashboard/Calendar fetch active. Archived tab fetches archived.
-    
+
     // Logic: If user specifically toggled "Archived", we fetch archived.
     // Otherwise default to active.
     const endpoint = viewArchived ? '/api/contracts/archived' : '/api/contracts';
-    
+
     try {
       const res = await fetch(endpoint);
       if (res.ok) {
@@ -86,7 +86,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         setContracts(data);
       } else {
         console.warn("Using mock data as server is unreachable");
-        setContracts([]); 
+        setContracts([]);
       }
     } catch (e) {
       console.error("Failed to fetch contracts", e);
@@ -97,7 +97,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
   useEffect(() => {
     fetchContracts();
-  }, [viewArchived, activeView]); 
+  }, [viewArchived, activeView]);
   // Refetch when view changes to ensure fresh data for calendar etc, 
   // though optimally we could cache.
 
@@ -106,16 +106,16 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
       if (contract.id) {
         setContracts(prev => prev.map(c => c.id === contract.id ? contract : c));
       } else {
-         setContracts(prev => [...prev, { ...contract, id: Date.now() }]);
+        setContracts(prev => [...prev, { ...contract, id: Date.now() }]);
       }
-      
+
       const res = await fetch('/api/contracts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(contract),
       });
-      
-      if(res.ok) {
+
+      if (res.ok) {
         fetchContracts();
       }
     } catch (e) {
@@ -168,26 +168,56 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     return s;
   }, [contracts]);
 
-  const filteredContracts = contracts.filter(c => 
-    c.draudejas.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.policyNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.valstybinisNr.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter State
+  const [filterSalesperson, setFilterSalesperson] = useState('');
+  const [filterType, setFilterType] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+
+  // Unique values for dropdowns
+  const uniqueSalespersons = useMemo(() => {
+    const sales = new Set(contracts.map(c => c.pardavejas).filter(Boolean));
+    return Array.from(sales).sort();
+  }, [contracts]);
+
+  const uniqueTypes = useMemo(() => {
+    const types = new Set(contracts.map(c => c.ldGrupe).filter(Boolean));
+    return Array.from(types).sort();
+  }, [contracts]);
+
+  const filteredContracts = contracts.filter(c => {
+    const matchesSearch =
+      c.draudejas.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.policyNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.valstybinisNr.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesSalesperson = filterSalesperson ? c.pardavejas === filterSalesperson : true;
+    const matchesType = filterType ? c.ldGrupe === filterType : true;
+
+    let matchesStatus = true;
+    if (filterStatus) {
+      const status = getStatus(c.galiojaIki);
+      if (filterStatus === 'active') matchesStatus = status === ExpiryStatus.VALID;
+      if (filterStatus === 'expiring') matchesStatus = status === ExpiryStatus.WARNING;
+      if (filterStatus === 'expired') matchesStatus = status === ExpiryStatus.EXPIRED;
+    }
+
+    return matchesSearch && matchesSalesperson && matchesType && matchesStatus;
+  });
 
   const handleExportCSV = () => {
     const headers = [
-      "ID", "Client Name", "Salesperson", "Policy No", "Type", 
-      "Reg Number", "Valid From", "Valid Until", "Yearly Price", 
+      "ID", "Client Name", "Salesperson", "Policy No", "Type",
+      "Reg Number", "Valid From", "Valid Until", "Yearly Price",
       "Payout Value", "Status", "Notes"
     ];
 
     const rows = filteredContracts.map(c => {
       const status = c.is_archived ? "Archived" : getStatus(c.galiojaIki);
       const escape = (str: string | number) => `"${String(str).replace(/"/g, '""')}"`;
-      
+
       return [
-        c.id, escape(c.draudejas), escape(c.pardavejas), escape(c.policyNo), 
-        escape(c.ldGrupe), escape(c.valstybinisNr), c.galiojaNuo, c.galiojaIki, 
+        c.id, escape(c.draudejas), escape(c.pardavejas), escape(c.policyNo),
+        escape(c.ldGrupe), escape(c.valstybinisNr), c.galiojaNuo, c.galiojaIki,
         c.metineIsmoka, c.ismoka, status, escape(c.notes.join(" | "))
       ].join(",");
     });
@@ -207,19 +237,19 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
   // --- Render Content Based on Active View ---
   const renderContent = () => {
-    switch(activeView) {
+    switch (activeView) {
       case 'calendar':
         return <CalendarView contracts={contracts} />;
-      
+
       case 'users':
         return user.role === 'admin' ? <UserManagement currentUser={user} /> : <div className="text-red-500">Access Denied</div>;
-      
+
       case 'tasks':
         return <TaskManager currentUser={user} />;
 
       case 'settings':
         return <SettingsView />;
-      
+
       case 'dashboard':
       default:
         return (
@@ -233,7 +263,99 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                     <p className="text-sm font-medium text-gray-500 mb-1">Critical / Expired</p>
                     <p className="text-3xl font-bold text-gray-900">{stats.red}</p>
                   </div>
+
+                  {/* Filters */}
+                  <div className="flex flex-wrap items-center gap-4 mb-6 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Filter size={20} />
+                      <span className="font-medium text-sm">Filters:</span>
+                    </div>
+
+                    <select
+                      value={filterSalesperson}
+                      onChange={(e) => setFilterSalesperson(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    >
+                      <option value="">All Salespersons</option>
+                      {uniqueSalespersons.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+
+                    <select
+                      value={filterType}
+                      onChange={(e) => setFilterType(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    >
+                      <option value="">All Types</option>
+                      {uniqueTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+
+                    <select
+                      value={filterStatus}
+                      onChange={(e) => setFilterStatus(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    >
+                      <option value="">All Statuses</option>
+                      <option value="active">Active</option>
+                      <option value="expiring">Expiring Soon</option>
+                      <option value="expired">Expired</option>
+                    </select>
+
+                    {(filterSalesperson || filterType || filterStatus) && (
+                      <button
+                        onClick={() => { setFilterSalesperson(''); setFilterType(''); setFilterStatus(''); }}
+                        className="text-sm text-red-600 hover:text-red-800 font-medium ml-auto"
+                      >
+                        Clear Filters
+                      </button>
+                    )}
+                  </div>
                   <div className="bg-red-50 p-3 rounded-full text-red-600"><XCircle size={24} /></div>
+                </div>
+
+                {/* Filters */}
+                <div className="flex flex-wrap items-center gap-4 mb-6 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Filter size={20} />
+                    <span className="font-medium text-sm">Filters:</span>
+                  </div>
+
+                  <select
+                    value={filterSalesperson}
+                    onChange={(e) => setFilterSalesperson(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  >
+                    <option value="">All Salespersons</option>
+                    {uniqueSalespersons.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+
+                  <select
+                    value={filterType}
+                    onChange={(e) => setFilterType(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  >
+                    <option value="">All Types</option>
+                    {uniqueTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  >
+                    <option value="">All Statuses</option>
+                    <option value="active">Active</option>
+                    <option value="expiring">Expiring Soon</option>
+                    <option value="expired">Expired</option>
+                  </select>
+
+                  {(filterSalesperson || filterType || filterStatus) && (
+                    <button
+                      onClick={() => { setFilterSalesperson(''); setFilterType(''); setFilterStatus(''); }}
+                      className="text-sm text-red-600 hover:text-red-800 font-medium ml-auto"
+                    >
+                      Clear Filters
+                    </button>
+                  )}
                 </div>
                 <div className="bg-white rounded-xl shadow-sm border border-yellow-100 p-6 flex items-center justify-between relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-2 h-full bg-yellow-400"></div>
@@ -241,7 +363,99 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                     <p className="text-sm font-medium text-gray-500 mb-1">Expiring Soon</p>
                     <p className="text-3xl font-bold text-gray-900">{stats.yellow}</p>
                   </div>
+
+                  {/* Filters */}
+                  <div className="flex flex-wrap items-center gap-4 mb-6 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Filter size={20} />
+                      <span className="font-medium text-sm">Filters:</span>
+                    </div>
+
+                    <select
+                      value={filterSalesperson}
+                      onChange={(e) => setFilterSalesperson(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    >
+                      <option value="">All Salespersons</option>
+                      {uniqueSalespersons.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+
+                    <select
+                      value={filterType}
+                      onChange={(e) => setFilterType(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    >
+                      <option value="">All Types</option>
+                      {uniqueTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+
+                    <select
+                      value={filterStatus}
+                      onChange={(e) => setFilterStatus(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    >
+                      <option value="">All Statuses</option>
+                      <option value="active">Active</option>
+                      <option value="expiring">Expiring Soon</option>
+                      <option value="expired">Expired</option>
+                    </select>
+
+                    {(filterSalesperson || filterType || filterStatus) && (
+                      <button
+                        onClick={() => { setFilterSalesperson(''); setFilterType(''); setFilterStatus(''); }}
+                        className="text-sm text-red-600 hover:text-red-800 font-medium ml-auto"
+                      >
+                        Clear Filters
+                      </button>
+                    )}
+                  </div>
                   <div className="bg-yellow-50 p-3 rounded-full text-yellow-600"><AlertTriangle size={24} /></div>
+                </div>
+
+                {/* Filters */}
+                <div className="flex flex-wrap items-center gap-4 mb-6 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Filter size={20} />
+                    <span className="font-medium text-sm">Filters:</span>
+                  </div>
+
+                  <select
+                    value={filterSalesperson}
+                    onChange={(e) => setFilterSalesperson(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  >
+                    <option value="">All Salespersons</option>
+                    {uniqueSalespersons.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+
+                  <select
+                    value={filterType}
+                    onChange={(e) => setFilterType(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  >
+                    <option value="">All Types</option>
+                    {uniqueTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  >
+                    <option value="">All Statuses</option>
+                    <option value="active">Active</option>
+                    <option value="expiring">Expiring Soon</option>
+                    <option value="expired">Expired</option>
+                  </select>
+
+                  {(filterSalesperson || filterType || filterStatus) && (
+                    <button
+                      onClick={() => { setFilterSalesperson(''); setFilterType(''); setFilterStatus(''); }}
+                      className="text-sm text-red-600 hover:text-red-800 font-medium ml-auto"
+                    >
+                      Clear Filters
+                    </button>
+                  )}
                 </div>
                 <div className="bg-white rounded-xl shadow-sm border border-green-100 p-6 flex items-center justify-between relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-2 h-full bg-green-500"></div>
@@ -249,31 +463,213 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                     <p className="text-sm font-medium text-gray-500 mb-1">Active Contracts</p>
                     <p className="text-3xl font-bold text-gray-900">{stats.green}</p>
                   </div>
+
+                  {/* Filters */}
+                  <div className="flex flex-wrap items-center gap-4 mb-6 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Filter size={20} />
+                      <span className="font-medium text-sm">Filters:</span>
+                    </div>
+
+                    <select
+                      value={filterSalesperson}
+                      onChange={(e) => setFilterSalesperson(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    >
+                      <option value="">All Salespersons</option>
+                      {uniqueSalespersons.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+
+                    <select
+                      value={filterType}
+                      onChange={(e) => setFilterType(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    >
+                      <option value="">All Types</option>
+                      {uniqueTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+
+                    <select
+                      value={filterStatus}
+                      onChange={(e) => setFilterStatus(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    >
+                      <option value="">All Statuses</option>
+                      <option value="active">Active</option>
+                      <option value="expiring">Expiring Soon</option>
+                      <option value="expired">Expired</option>
+                    </select>
+
+                    {(filterSalesperson || filterType || filterStatus) && (
+                      <button
+                        onClick={() => { setFilterSalesperson(''); setFilterType(''); setFilterStatus(''); }}
+                        className="text-sm text-red-600 hover:text-red-800 font-medium ml-auto"
+                      >
+                        Clear Filters
+                      </button>
+                    )}
+                  </div>
                   <div className="bg-green-50 p-3 rounded-full text-green-600"><CheckCircle size={24} /></div>
                 </div>
+
+                {/* Filters */}
+                <div className="flex flex-wrap items-center gap-4 mb-6 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Filter size={20} />
+                    <span className="font-medium text-sm">Filters:</span>
+                  </div>
+
+                  <select
+                    value={filterSalesperson}
+                    onChange={(e) => setFilterSalesperson(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  >
+                    <option value="">All Salespersons</option>
+                    {uniqueSalespersons.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+
+                  <select
+                    value={filterType}
+                    onChange={(e) => setFilterType(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  >
+                    <option value="">All Types</option>
+                    {uniqueTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  >
+                    <option value="">All Statuses</option>
+                    <option value="active">Active</option>
+                    <option value="expiring">Expiring Soon</option>
+                    <option value="expired">Expired</option>
+                  </select>
+
+                  {(filterSalesperson || filterType || filterStatus) && (
+                    <button
+                      onClick={() => { setFilterSalesperson(''); setFilterType(''); setFilterStatus(''); }}
+                      className="text-sm text-red-600 hover:text-red-800 font-medium ml-auto"
+                    >
+                      Clear Filters
+                    </button>
+                  )}
+                </div>
               </div>
+
+            {/* Filters */}
+            <div className="flex flex-wrap items-center gap-4 mb-6 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+              <div className="flex items-center gap-2 text-gray-600">
+                <Filter size={20} />
+                <span className="font-medium text-sm">Filters:</span>
+              </div>
+
+              <select
+                value={filterSalesperson}
+                onChange={(e) => setFilterSalesperson(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                <option value="">All Salespersons</option>
+                {uniqueSalespersons.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                <option value="">All Types</option>
+                {uniqueTypes.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                <option value="">All Statuses</option>
+                <option value="active">Active</option>
+                <option value="expiring">Expiring Soon</option>
+                <option value="expired">Expired</option>
+              </select>
+
+              {(filterSalesperson || filterType || filterStatus) && (
+                <button
+                  onClick={() => { setFilterSalesperson(''); setFilterType(''); setFilterStatus(''); }}
+                  className="text-sm text-red-600 hover:text-red-800 font-medium ml-auto"
+                >
+                  Clear Filters
+                </button>
+              )}
+            </div>
             )}
 
             {/* View Toggle Tabs */}
             <div className="flex items-center gap-4 border-b border-gray-200 mb-6">
               <button
                 onClick={() => setViewArchived(false)}
-                className={`pb-3 px-1 flex items-center gap-2 text-sm font-medium transition-colors border-b-2 ${
-                  !viewArchived ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
+                className={`pb-3 px-1 flex items-center gap-2 text-sm font-medium transition-colors border-b-2 ${!viewArchived ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+                  }`}
               >
                 <LayoutList size={18} />
                 Active Contracts
               </button>
               <button
                 onClick={() => setViewArchived(true)}
-                className={`pb-3 px-1 flex items-center gap-2 text-sm font-medium transition-colors border-b-2 ${
-                  viewArchived ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
+                className={`pb-3 px-1 flex items-center gap-2 text-sm font-medium transition-colors border-b-2 ${viewArchived ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+                  }`}
               >
                 <Archive size={18} />
                 Archived
               </button>
+            </div>
+
+            {/* Filters */}
+            <div className="flex flex-wrap items-center gap-4 mb-6 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+              <div className="flex items-center gap-2 text-gray-600">
+                <Filter size={20} />
+                <span className="font-medium text-sm">Filters:</span>
+              </div>
+
+              <select
+                value={filterSalesperson}
+                onChange={(e) => setFilterSalesperson(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                <option value="">All Salespersons</option>
+                {uniqueSalespersons.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                <option value="">All Types</option>
+                {uniqueTypes.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                <option value="">All Statuses</option>
+                <option value="active">Active</option>
+                <option value="expiring">Expiring Soon</option>
+                <option value="expired">Expired</option>
+              </select>
+
+              {(filterSalesperson || filterType || filterStatus) && (
+                <button
+                  onClick={() => { setFilterSalesperson(''); setFilterType(''); setFilterStatus(''); }}
+                  className="text-sm text-red-600 hover:text-red-800 font-medium ml-auto"
+                >
+                  Clear Filters
+                </button>
+              )}
             </div>
 
             {/* Action Bar */}
@@ -297,41 +693,179 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                     onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
                     className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   />
-                  
+
                   {/* Search History Dropdown */}
                   {isSearchFocused && searchHistory.length > 0 && (
                     <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-30">
-                       <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
-                          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Recent Searches</span>
-                          <button 
-                              onMouseDown={(e) => {
-                                  e.preventDefault(); 
-                                  clearSearchHistory();
-                              }}
-                              className="text-xs text-red-500 hover:text-red-700 font-medium"
+                      <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Recent Searches</span>
+                        <button
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            clearSearchHistory();
+                          }}
+                          className="text-xs text-red-500 hover:text-red-700 font-medium"
+                        >
+                          Clear
+                        </button>
+                      </div>
+
+                      {/* Filters */}
+                      <div className="flex flex-wrap items-center gap-4 mb-6 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <Filter size={20} />
+                          <span className="font-medium text-sm">Filters:</span>
+                        </div>
+
+                        <select
+                          value={filterSalesperson}
+                          onChange={(e) => setFilterSalesperson(e.target.value)}
+                          className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        >
+                          <option value="">All Salespersons</option>
+                          {uniqueSalespersons.map(s => <option key={s} value={s}>{s}</option>)}
+                        </select>
+
+                        <select
+                          value={filterType}
+                          onChange={(e) => setFilterType(e.target.value)}
+                          className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        >
+                          <option value="">All Types</option>
+                          {uniqueTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+
+                        <select
+                          value={filterStatus}
+                          onChange={(e) => setFilterStatus(e.target.value)}
+                          className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        >
+                          <option value="">All Statuses</option>
+                          <option value="active">Active</option>
+                          <option value="expiring">Expiring Soon</option>
+                          <option value="expired">Expired</option>
+                        </select>
+
+                        {(filterSalesperson || filterType || filterStatus) && (
+                          <button
+                            onClick={() => { setFilterSalesperson(''); setFilterType(''); setFilterStatus(''); }}
+                            className="text-sm text-red-600 hover:text-red-800 font-medium ml-auto"
                           >
-                              Clear
+                            Clear Filters
                           </button>
-                       </div>
-                       {searchHistory.map((term, i) => (
-                           <button
-                              key={i}
-                              className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 flex items-center gap-3 transition-colors border-b border-gray-50 last:border-0"
-                              onMouseDown={(e) => {
-                                  e.preventDefault();
-                                  setSearchTerm(term);
-                                  setIsSearchFocused(false);
-                              }}
-                           >
-                              <History size={16} className="text-gray-400" />
-                              {term}
-                           </button>
-                       ))}
+                        )}
+                      </div>
+                      {searchHistory.map((term, i) => (
+                        <button
+                          key={i}
+                          className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 flex items-center gap-3 transition-colors border-b border-gray-50 last:border-0"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setSearchTerm(term);
+                            setIsSearchFocused(false);
+                          }}
+                        >
+                          <History size={16} className="text-gray-400" />
+                          {term}
+                        </button>
+                      ))}
                     </div>
+
+            {/* Filters */}
+                  <div className="flex flex-wrap items-center gap-4 mb-6 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Filter size={20} />
+                      <span className="font-medium text-sm">Filters:</span>
+                    </div>
+
+                    <select
+                      value={filterSalesperson}
+                      onChange={(e) => setFilterSalesperson(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    >
+                      <option value="">All Salespersons</option>
+                      {uniqueSalespersons.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+
+                    <select
+                      value={filterType}
+                      onChange={(e) => setFilterType(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    >
+                      <option value="">All Types</option>
+                      {uniqueTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+
+                    <select
+                      value={filterStatus}
+                      onChange={(e) => setFilterStatus(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    >
+                      <option value="">All Statuses</option>
+                      <option value="active">Active</option>
+                      <option value="expiring">Expiring Soon</option>
+                      <option value="expired">Expired</option>
+                    </select>
+
+                    {(filterSalesperson || filterType || filterStatus) && (
+                      <button
+                        onClick={() => { setFilterSalesperson(''); setFilterType(''); setFilterStatus(''); }}
+                        className="text-sm text-red-600 hover:text-red-800 font-medium ml-auto"
+                      >
+                        Clear Filters
+                      </button>
+                    )}
+                  </div>
                   )}
                 </div>
 
-                <button 
+                {/* Filters */}
+                <div className="flex flex-wrap items-center gap-4 mb-6 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Filter size={20} />
+                    <span className="font-medium text-sm">Filters:</span>
+                  </div>
+
+                  <select
+                    value={filterSalesperson}
+                    onChange={(e) => setFilterSalesperson(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  >
+                    <option value="">All Salespersons</option>
+                    {uniqueSalespersons.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+
+                  <select
+                    value={filterType}
+                    onChange={(e) => setFilterType(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  >
+                    <option value="">All Types</option>
+                    {uniqueTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  >
+                    <option value="">All Statuses</option>
+                    <option value="active">Active</option>
+                    <option value="expiring">Expiring Soon</option>
+                    <option value="expired">Expired</option>
+                  </select>
+
+                  {(filterSalesperson || filterType || filterStatus) && (
+                    <button
+                      onClick={() => { setFilterSalesperson(''); setFilterType(''); setFilterStatus(''); }}
+                      className="text-sm text-red-600 hover:text-red-800 font-medium ml-auto"
+                    >
+                      Clear Filters
+                    </button>
+                  )}
+                </div>
+
+                <button
                   onClick={handleExportCSV}
                   className="flex items-center gap-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2.5 rounded-lg font-medium transition-colors shadow-sm"
                 >
@@ -339,7 +873,53 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                   <span className="hidden sm:inline">Export CSV</span>
                 </button>
               </div>
-              
+
+              {/* Filters */}
+              <div className="flex flex-wrap items-center gap-4 mb-6 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Filter size={20} />
+                  <span className="font-medium text-sm">Filters:</span>
+                </div>
+
+                <select
+                  value={filterSalesperson}
+                  onChange={(e) => setFilterSalesperson(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                >
+                  <option value="">All Salespersons</option>
+                  {uniqueSalespersons.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+
+                <select
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                >
+                  <option value="">All Types</option>
+                  {uniqueTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                >
+                  <option value="">All Statuses</option>
+                  <option value="active">Active</option>
+                  <option value="expiring">Expiring Soon</option>
+                  <option value="expired">Expired</option>
+                </select>
+
+                {(filterSalesperson || filterType || filterStatus) && (
+                  <button
+                    onClick={() => { setFilterSalesperson(''); setFilterType(''); setFilterStatus(''); }}
+                    className="text-sm text-red-600 hover:text-red-800 font-medium ml-auto"
+                  >
+                    Clear Filters
+                  </button>
+                )}
+              </div>
+
               {canCreate && !viewArchived && (
                 <button
                   onClick={() => { setEditingContract(undefined); setIsFormOpen(true); }}
@@ -351,11 +931,57 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
               )}
             </div>
 
+            {/* Filters */}
+            <div className="flex flex-wrap items-center gap-4 mb-6 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+              <div className="flex items-center gap-2 text-gray-600">
+                <Filter size={20} />
+                <span className="font-medium text-sm">Filters:</span>
+              </div>
+
+              <select
+                value={filterSalesperson}
+                onChange={(e) => setFilterSalesperson(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                <option value="">All Salespersons</option>
+                {uniqueSalespersons.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                <option value="">All Types</option>
+                {uniqueTypes.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                <option value="">All Statuses</option>
+                <option value="active">Active</option>
+                <option value="expiring">Expiring Soon</option>
+                <option value="expired">Expired</option>
+              </select>
+
+              {(filterSalesperson || filterType || filterStatus) && (
+                <button
+                  onClick={() => { setFilterSalesperson(''); setFilterType(''); setFilterStatus(''); }}
+                  className="text-sm text-red-600 hover:text-red-800 font-medium ml-auto"
+                >
+                  Clear Filters
+                </button>
+              )}
+            </div>
+
             {/* Contract List */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <ContractList 
+              <ContractList
                 user={user}
-                contracts={filteredContracts} 
+                contracts={filteredContracts}
                 onEdit={(c) => { setEditingContract(c); setIsFormOpen(true); }}
                 onDelete={handleDelete}
                 onArchiveToggle={handleArchiveToggle}
@@ -364,6 +990,52 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 getStatus={getStatus}
               />
             </div>
+
+            {/* Filters */}
+            <div className="flex flex-wrap items-center gap-4 mb-6 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+              <div className="flex items-center gap-2 text-gray-600">
+                <Filter size={20} />
+                <span className="font-medium text-sm">Filters:</span>
+              </div>
+
+              <select
+                value={filterSalesperson}
+                onChange={(e) => setFilterSalesperson(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                <option value="">All Salespersons</option>
+                {uniqueSalespersons.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                <option value="">All Types</option>
+                {uniqueTypes.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                <option value="">All Statuses</option>
+                <option value="active">Active</option>
+                <option value="expiring">Expiring Soon</option>
+                <option value="expired">Expired</option>
+              </select>
+
+              {(filterSalesperson || filterType || filterStatus) && (
+                <button
+                  onClick={() => { setFilterSalesperson(''); setFilterType(''); setFilterStatus(''); }}
+                  className="text-sm text-red-600 hover:text-red-800 font-medium ml-auto"
+                >
+                  Clear Filters
+                </button>
+              )}
+            </div>
           </>
         );
     }
@@ -371,9 +1043,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
   return (
     <div className="min-h-screen flex bg-gray-50">
-      
+
       {/* Sidebar Navigation */}
-      <Sidebar 
+      <Sidebar
         user={user}
         activeView={activeView}
         setActiveView={setActiveView}
@@ -387,7 +1059,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         {/* Mobile Header Trigger */}
         <header className="md:hidden bg-white border-b border-gray-200 h-16 flex items-center px-4 justify-between shrink-0">
           <div className="flex items-center gap-2">
-             <span className="font-bold text-lg text-blue-900">Finlitte</span>
+            <span className="font-bold text-lg text-blue-900">Finlitte</span>
           </div>
           <button onClick={() => setIsSidebarOpen(true)} className="p-2 text-gray-600">
             <Menu size={24} />
@@ -396,23 +1068,23 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
         {/* Scrollable Content */}
         <main className="flex-1 overflow-auto p-4 sm:p-8">
-           <div className="max-w-7xl mx-auto w-full">
-              {renderContent()}
-           </div>
+          <div className="max-w-7xl mx-auto w-full">
+            {renderContent()}
+          </div>
         </main>
       </div>
 
       {/* Modals */}
       {isFormOpen && canCreate && (
-        <ContractForm 
-          onClose={() => setIsFormOpen(false)} 
+        <ContractForm
+          onClose={() => setIsFormOpen(false)}
           onSave={handleSave}
           initialData={editingContract}
         />
       )}
 
       {historyContract && historyContract.id && (
-        <HistoryModal 
+        <HistoryModal
           contractId={historyContract.id}
           contractPolicy={historyContract.policyNo}
           onClose={() => setHistoryContract(null)}
