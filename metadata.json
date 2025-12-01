@@ -1,0 +1,5 @@
+{
+  "name": "Finlitte CRM",
+  "description": "A secure, production-ready Insurance Contract Management CRM with traffic-light expiration tracking, document parsing, and robust SQLite data persistence.",
+  "requestFramePermissions": []
+}
