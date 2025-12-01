@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Task, User } from '../types';
-import { CheckCircle, Circle, Trash2, Plus, Calendar, User as UserIcon, Edit2, X } from 'lucide-react';
+import { CheckCircle, Circle, Trash2, Plus, Calendar, User as UserIcon, Edit2, X, MessageSquare, Send } from 'lucide-react';
 
 interface TaskManagerProps {
   currentUser: User;
@@ -16,7 +16,7 @@ export default function TaskManager({ currentUser }: TaskManagerProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [users, setUsers] = useState<DBUser[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Create/Edit Task Form State
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -24,6 +24,10 @@ export default function TaskManager({ currentUser }: TaskManagerProps) {
   const [dueDate, setDueDate] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+
+  // Comments State
+  const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
+  const [commentText, setCommentText] = useState('');
 
   useEffect(() => {
     fetchTasks();
@@ -84,11 +88,11 @@ export default function TaskManager({ currentUser }: TaskManagerProps) {
       const res = await fetch(url, {
         method: method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          title, 
-          description, 
-          assigned_to: assignedTo || currentUser.username, 
-          due_date: dueDate 
+        body: JSON.stringify({
+          title,
+          description,
+          assigned_to: assignedTo || currentUser.username,
+          due_date: dueDate
         })
       });
 
@@ -106,7 +110,7 @@ export default function TaskManager({ currentUser }: TaskManagerProps) {
       const newStatus = task.status === 'completed' ? 'pending' : 'completed';
       // Optimistic update
       setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: newStatus } : t));
-      
+
       await fetch(`/api/tasks/${task.id}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -128,6 +132,33 @@ export default function TaskManager({ currentUser }: TaskManagerProps) {
     }
   };
 
+  const handleAddComment = async (taskId: number) => {
+    if (!commentText.trim()) return;
+    try {
+      const res = await fetch(`/api/tasks/${taskId}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: commentText })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setTasks(prev => prev.map(t => {
+          if (t.id === taskId) {
+            return {
+              ...t,
+              comments: [...(t.comments || []), data.comment]
+            };
+          }
+          return t;
+        }));
+        setCommentText('');
+      }
+    } catch (e) {
+      console.error("Failed to add comment", e);
+    }
+  };
+
   const canManage = currentUser.role === 'admin';
 
   return (
@@ -138,7 +169,7 @@ export default function TaskManager({ currentUser }: TaskManagerProps) {
           <p className="text-gray-500">Track assignments and to-dos.</p>
         </div>
         {canManage && !isFormOpen && (
-          <button 
+          <button
             onClick={() => setIsFormOpen(true)}
             className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
@@ -152,10 +183,10 @@ export default function TaskManager({ currentUser }: TaskManagerProps) {
       {isFormOpen && (
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 animate-in slide-in-from-top-4">
           <div className="flex justify-between items-center mb-4">
-             <h3 className="text-lg font-semibold">{editingTask ? 'Edit Task' : 'Assign New Task'}</h3>
-             <button onClick={resetForm} className="text-gray-400 hover:text-gray-600"><X size={20}/></button>
+            <h3 className="text-lg font-semibold">{editingTask ? 'Edit Task' : 'Assign New Task'}</h3>
+            <button onClick={resetForm} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
           </div>
-          
+
           <form onSubmit={handleSaveTask} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
@@ -201,7 +232,7 @@ export default function TaskManager({ currentUser }: TaskManagerProps) {
             <div key={task.id} className={`bg-white p-4 rounded-xl shadow-sm border transition-all ${task.status === 'completed' ? 'border-gray-200 bg-gray-50' : 'border-blue-100'}`}>
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3 flex-1">
-                  <button 
+                  <button
                     onClick={() => toggleStatus(task)}
                     className={`mt-1 transition-colors ${task.status === 'completed' ? 'text-green-500' : 'text-gray-300 hover:text-blue-500'}`}
                   >
@@ -212,7 +243,7 @@ export default function TaskManager({ currentUser }: TaskManagerProps) {
                       {task.title}
                     </h4>
                     <p className="text-gray-600 text-sm mt-1">{task.description}</p>
-                    
+
                     <div className="flex flex-wrap items-center gap-4 mt-3 text-xs text-gray-500">
                       <div className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded">
                         <UserIcon size={12} />
@@ -227,26 +258,77 @@ export default function TaskManager({ currentUser }: TaskManagerProps) {
                           {new Date(task.due_date).toLocaleDateString()}
                         </div>
                       )}
+                      <button
+                        onClick={() => setExpandedTaskId(expandedTaskId === task.id ? null : task.id)}
+                        className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${expandedTaskId === task.id ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'}`}
+                      >
+                        <MessageSquare size={12} />
+                        {task.comments?.length || 0} Comments
+                      </button>
                     </div>
+
+                    {/* Comments Section */}
+                    {expandedTaskId === task.id && (
+                      <div className="mt-4 pt-4 border-t border-gray-100 animate-in slide-in-from-top-2">
+                        <div className="space-y-3 mb-4">
+                          {task.comments && task.comments.length > 0 ? (
+                            task.comments.map(comment => (
+                              <div key={comment.id} className="bg-gray-50 p-3 rounded-lg text-sm">
+                                <div className="flex justify-between items-center mb-1">
+                                  <span className="font-semibold text-gray-700">{comment.author}</span>
+                                  <span className="text-xs text-gray-400">{new Date(comment.timestamp).toLocaleString()}</span>
+                                </div>
+                                <p className="text-gray-600">{comment.text}</p>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-sm text-gray-400 italic">No comments yet.</p>
+                          )}
+                        </div>
+
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={commentText}
+                            onChange={(e) => setCommentText(e.target.value)}
+                            placeholder="Write a comment..."
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleAddComment(task.id);
+                              }
+                            }}
+                          />
+                          <button
+                            onClick={() => handleAddComment(task.id)}
+                            disabled={!commentText.trim()}
+                            className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          >
+                            <Send size={18} />
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {canManage && (
                   <div className="flex items-center gap-1">
-                     <button
-                        onClick={() => openEditForm(task)}
-                        className="text-gray-400 hover:text-blue-500 p-2 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Edit Task"
-                     >
-                       <Edit2 size={18} />
-                     </button>
-                     <button 
-                        onClick={() => handleDelete(task.id)}
-                        className="text-gray-400 hover:text-red-500 p-2 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Delete Task"
-                     >
-                        <Trash2 size={18} />
-                     </button>
+                    <button
+                      onClick={() => openEditForm(task)}
+                      className="text-gray-400 hover:text-blue-500 p-2 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="Edit Task"
+                    >
+                      <Edit2 size={18} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(task.id)}
+                      className="text-gray-400 hover:text-red-500 p-2 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Delete Task"
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </div>
                 )}
               </div>

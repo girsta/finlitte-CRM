@@ -37,6 +37,13 @@ export interface HistoryEntry {
   details: string;
 }
 
+export interface TaskComment {
+  id: number;
+  text: string;
+  author: string;
+  timestamp: string;
+}
+
 export interface Task {
   id: number;
   title: string;
@@ -46,4 +53,5 @@ export interface Task {
   status: 'pending' | 'completed';
   due_date?: string;
   created_at: string;
+  comments?: TaskComment[];
 }

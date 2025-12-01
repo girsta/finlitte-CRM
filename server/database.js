@@ -29,7 +29,7 @@ db.serialize(() => {
     password TEXT,
     role TEXT DEFAULT 'viewer'
   )`);
-  
+
   // Create Index on Username
   db.run(`CREATE INDEX IF NOT EXISTS idx_username ON users(username)`);
 
@@ -71,7 +71,8 @@ db.serialize(() => {
     created_by TEXT,
     status TEXT DEFAULT 'pending',
     due_date TEXT,
-    created_at TEXT
+    created_at TEXT,
+    comments TEXT
   )`);
 
   // --- Migrations for existing databases ---
@@ -99,6 +100,15 @@ db.serialize(() => {
     if (rows && !rows.some(r => r.name === 'user_id')) {
       console.log("Migrating: Adding user_id column to history table");
       db.run("ALTER TABLE history ADD COLUMN user_id INTEGER");
+    }
+  });
+
+  // Check for 'comments' in tasks
+  db.all("PRAGMA table_info(tasks)", (err, rows) => {
+    if (err) console.error(err);
+    if (rows && !rows.some(r => r.name === 'comments')) {
+      console.log("Migrating: Adding comments column to tasks table");
+      db.run("ALTER TABLE tasks ADD COLUMN comments TEXT");
     }
   });
 

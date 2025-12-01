@@ -67,9 +67,9 @@ function isAuthenticated(req, res, next) {
 function hasRole(allowedRoles) {
   return (req, res, next) => {
     if (!req.session.role) {
-         return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
+      return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     if (!allowedRoles.includes(req.session.role)) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
@@ -90,7 +90,7 @@ function logHistory(contractId, userId, username, action, details) {
 // Login
 app.post('/login', loginLimiter, (req, res) => {
   const { username, password } = req.body;
-  
+
   if (!username || !password) {
     return res.status(400).json({ error: 'Missing credentials' });
   }
@@ -104,15 +104,15 @@ app.post('/login', loginLimiter, (req, res) => {
       if (match) {
         req.session.userId = user.id;
         req.session.username = user.username;
-        req.session.role = user.role || 'viewer'; 
-        
-        res.json({ 
-          message: 'Login successful', 
-          user: { 
-            username: user.username, 
+        req.session.role = user.role || 'viewer';
+
+        res.json({
+          message: 'Login successful',
+          user: {
+            username: user.username,
             role: req.session.role,
-            isAdmin: user.role === 'admin' 
-          } 
+            isAdmin: user.role === 'admin'
+          }
         });
       } else {
         res.status(401).json({ error: 'Invalid credentials' });
@@ -136,13 +136,13 @@ app.post('/logout', (req, res) => {
 app.get('/api/contracts', isAuthenticated, (req, res) => {
   db.all('SELECT * FROM contracts WHERE is_archived = 0 ORDER BY galiojaIki ASC', [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
-    
+
     const contracts = rows.map(row => ({
       ...row,
       notes: row.notes ? JSON.parse(row.notes) : [],
       is_archived: !!row.is_archived
     }));
-    
+
     res.json(contracts);
   });
 });
@@ -151,13 +151,13 @@ app.get('/api/contracts', isAuthenticated, (req, res) => {
 app.get('/api/contracts/archived', isAuthenticated, (req, res) => {
   db.all('SELECT * FROM contracts WHERE is_archived = 1 ORDER BY atnaujinimoData DESC', [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
-    
+
     const contracts = rows.map(row => ({
       ...row,
       notes: row.notes ? JSON.parse(row.notes) : [],
       is_archived: !!row.is_archived
     }));
-    
+
     res.json(contracts);
   });
 });
@@ -175,7 +175,7 @@ app.post('/api/contracts', isAuthenticated, hasRole(['admin', 'sales']), (req, r
   const c = req.body;
   const username = req.session.username || 'admin';
   const userId = req.session.userId || 0;
-  
+
   if (!c.draudejas || !c.policyNo || !c.galiojaIki) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
@@ -209,7 +209,7 @@ app.post('/api/contracts', isAuthenticated, hasRole(['admin', 'sales']), (req, r
       if (oldContract.notes !== notesStr) {
         const oldNotes = JSON.parse(oldContract.notes || '[]');
         const newNotes = c.notes || [];
-        if (newNotes.length > oldNotes.length) changes.push(`Added note: "${newNotes[newNotes.length-1]}"`);
+        if (newNotes.length > oldNotes.length) changes.push(`Added note: "${newNotes[newNotes.length - 1]}"`);
         else if (newNotes.length < oldNotes.length) changes.push(`Removed note`);
         else changes.push('Notes updated');
       }
@@ -219,7 +219,7 @@ app.post('/api/contracts', isAuthenticated, hasRole(['admin', 'sales']), (req, r
         galiojaNuo = ?, galiojaIki = ?, valstybinisNr = ?, 
         metineIsmoka = ?, ismoka = ?, notes = ?, atnaujinimoData = ?
         WHERE id = ?`;
-      
+
       const params = [
         c.draudejas, c.pardavejas, c.ldGrupe, c.policyNo,
         c.galiojaNuo, c.galiojaIki, c.valstybinisNr,
@@ -227,7 +227,7 @@ app.post('/api/contracts', isAuthenticated, hasRole(['admin', 'sales']), (req, r
         c.id
       ];
 
-      db.run(sql, params, function(err) {
+      db.run(sql, params, function (err) {
         if (err) return res.status(500).json({ error: err.message });
         if (changes.length > 0) logHistory(c.id, userId, username, 'UPDATED', changes.join('; '));
         res.json({ message: 'Updated', id: c.id });
@@ -247,7 +247,7 @@ app.post('/api/contracts', isAuthenticated, hasRole(['admin', 'sales']), (req, r
       c.metineIsmoka, c.ismoka, notesStr, new Date().toISOString()
     ];
 
-    db.run(sql, params, function(err) {
+    db.run(sql, params, function (err) {
       if (err) return res.status(500).json({ error: err.message });
       const newId = this.lastID;
       logHistory(newId, userId, username, 'CREATED', 'Contract created');
@@ -261,17 +261,17 @@ app.post('/api/contracts/:id/archive', isAuthenticated, hasRole(['admin', 'sales
   const id = req.params.id;
   const username = req.session.username || 'admin';
   const userId = req.session.userId || 0;
-  
+
   db.get('SELECT is_archived FROM contracts WHERE id = ?', [id], (err, row) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!row) return res.status(404).json({ error: 'Contract not found' });
 
     const newStatus = row.is_archived === 1 ? 0 : 1;
     const action = newStatus === 1 ? 'ARCHIVED' : 'RESTORED';
-    
-    db.run('UPDATE contracts SET is_archived = ?, atnaujinimoData = ? WHERE id = ?', 
-      [newStatus, new Date().toISOString(), id], 
-      function(err) {
+
+    db.run('UPDATE contracts SET is_archived = ?, atnaujinimoData = ? WHERE id = ?',
+      [newStatus, new Date().toISOString(), id],
+      function (err) {
         if (err) return res.status(500).json({ error: err.message });
         logHistory(id, userId, username, action, `Contract ${action.toLowerCase()}`);
         res.json({ message: action, is_archived: !!newStatus });
@@ -286,7 +286,7 @@ app.delete('/api/contracts/:id', isAuthenticated, hasRole(['admin']), (req, res)
   const username = req.session.username || 'admin';
   const userId = req.session.userId || 0;
 
-  db.run('DELETE FROM contracts WHERE id = ?', [id], function(err) {
+  db.run('DELETE FROM contracts WHERE id = ?', [id], function (err) {
     if (err) return res.status(500).json({ error: err.message });
     logHistory(id, userId, username, 'DELETED', 'Contract permanently deleted');
     res.json({ message: 'Deleted' });
@@ -304,10 +304,10 @@ app.get('/api/users', isAuthenticated, hasRole(['admin']), (req, res) => {
 app.post('/api/users', isAuthenticated, hasRole(['admin']), async (req, res) => {
   const { username, password, role } = req.body;
   if (!username || !password) return res.status(400).json({ error: 'Missing fields' });
-  
+
   try {
     const hash = await bcrypt.hash(password, 10);
-    db.run("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", [username, hash, role || 'viewer'], function(err) {
+    db.run("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", [username, hash, role || 'viewer'], function (err) {
       if (err) return res.status(400).json({ error: 'Username likely exists' });
       res.json({ message: 'User created' });
     });
@@ -332,13 +332,13 @@ app.put('/api/users/:id', isAuthenticated, hasRole(['admin']), async (req, res) 
       if (password && password.trim() !== "") {
         // Update with new password
         const hash = await bcrypt.hash(password, 10);
-        db.run("UPDATE users SET username = ?, password = ?, role = ? WHERE id = ?", [username, hash, role, userId], function(err) {
+        db.run("UPDATE users SET username = ?, password = ?, role = ? WHERE id = ?", [username, hash, role, userId], function (err) {
           if (err) return res.status(500).json({ error: err.message });
           res.json({ message: 'User updated' });
         });
       } else {
         // Update without changing password
-        db.run("UPDATE users SET username = ?, role = ? WHERE id = ?", [username, role, userId], function(err) {
+        db.run("UPDATE users SET username = ?, role = ? WHERE id = ?", [username, role, userId], function (err) {
           if (err) return res.status(500).json({ error: err.message });
           res.json({ message: 'User updated' });
         });
@@ -351,7 +351,7 @@ app.put('/api/users/:id', isAuthenticated, hasRole(['admin']), async (req, res) 
 
 app.delete('/api/users/:id', isAuthenticated, hasRole(['admin']), (req, res) => {
   if (req.params.id == req.session.userId) return res.status(400).json({ error: "Cannot delete yourself" });
-  db.run("DELETE FROM users WHERE id = ?", [req.params.id], function(err) {
+  db.run("DELETE FROM users WHERE id = ?", [req.params.id], function (err) {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ message: 'User deleted' });
   });
@@ -361,7 +361,7 @@ app.delete('/api/users/:id', isAuthenticated, hasRole(['admin']), (req, res) => 
 app.get('/api/tasks', isAuthenticated, (req, res) => {
   const role = req.session.role;
   const username = req.session.username;
-  
+
   let sql = 'SELECT * FROM tasks ORDER BY created_at DESC';
   let params = [];
 
@@ -372,7 +372,13 @@ app.get('/api/tasks', isAuthenticated, (req, res) => {
 
   db.all(sql, params, (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
-    res.json(rows);
+
+    const tasks = rows.map(row => ({
+      ...row,
+      comments: row.comments ? JSON.parse(row.comments) : []
+    }));
+
+    res.json(tasks);
   });
 });
 
@@ -381,9 +387,9 @@ app.post('/api/tasks', isAuthenticated, hasRole(['admin']), (req, res) => {
   const created_by = req.session.username || 'admin';
 
   db.run(
-    "INSERT INTO tasks (title, description, assigned_to, created_by, due_date, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-    [title, description, assigned_to, created_by, due_date, new Date().toISOString()],
-    function(err) {
+    "INSERT INTO tasks (title, description, assigned_to, created_by, due_date, created_at, comments) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    [title, description, assigned_to, created_by, due_date, new Date().toISOString(), '[]'],
+    function (err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ message: 'Task created', id: this.lastID });
     }
@@ -392,11 +398,11 @@ app.post('/api/tasks', isAuthenticated, hasRole(['admin']), (req, res) => {
 
 app.put('/api/tasks/:id', isAuthenticated, hasRole(['admin']), (req, res) => {
   const { title, description, assigned_to, due_date } = req.body;
-  
+
   db.run(
     "UPDATE tasks SET title = ?, description = ?, assigned_to = ?, due_date = ? WHERE id = ?",
     [title, description, assigned_to, due_date, req.params.id],
-    function(err) {
+    function (err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ message: 'Task updated' });
     }
@@ -406,14 +412,47 @@ app.put('/api/tasks/:id', isAuthenticated, hasRole(['admin']), (req, res) => {
 app.patch('/api/tasks/:id/status', isAuthenticated, (req, res) => {
   const { status } = req.body;
   // TODO: Add check to ensure user is assigned to task or is admin
-  db.run("UPDATE tasks SET status = ? WHERE id = ?", [status, req.params.id], function(err) {
+  db.run("UPDATE tasks SET status = ? WHERE id = ?", [status, req.params.id], function (err) {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ message: 'Status updated' });
   });
 });
 
+app.post('/api/tasks/:id/comments', isAuthenticated, (req, res) => {
+  const { text } = req.body;
+  const username = req.session.username;
+  const taskId = req.params.id;
+
+  if (!text) return res.status(400).json({ error: 'Comment text required' });
+
+  db.get('SELECT * FROM tasks WHERE id = ?', [taskId], (err, task) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!task) return res.status(404).json({ error: 'Task not found' });
+
+    // Check permissions: Admin or Assigned User
+    if (req.session.role !== 'admin' && task.assigned_to !== username) {
+      return res.status(403).json({ error: 'Not authorized to comment on this task' });
+    }
+
+    const comments = task.comments ? JSON.parse(task.comments) : [];
+    const newComment = {
+      id: Date.now(),
+      text,
+      author: username,
+      timestamp: new Date().toISOString()
+    };
+
+    comments.push(newComment);
+
+    db.run('UPDATE tasks SET comments = ? WHERE id = ?', [JSON.stringify(comments), taskId], function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ message: 'Comment added', comment: newComment });
+    });
+  });
+});
+
 app.delete('/api/tasks/:id', isAuthenticated, hasRole(['admin']), (req, res) => {
-  db.run("DELETE FROM tasks WHERE id = ?", [req.params.id], function(err) {
+  db.run("DELETE FROM tasks WHERE id = ?", [req.params.id], function (err) {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ message: 'Task deleted' });
   });
@@ -422,7 +461,7 @@ app.delete('/api/tasks/:id', isAuthenticated, hasRole(['admin']), (req, res) => 
 // --- Static File Serving (VPS Optimized) ---
 if (process.env.NODE_ENV === 'production') {
   const distPath = path.join(__dirname, '../dist');
-  
+
   if (fs.existsSync(distPath)) {
     // 1. Standard Production Build (if 'dist' exists)
     app.use(express.static(distPath));
