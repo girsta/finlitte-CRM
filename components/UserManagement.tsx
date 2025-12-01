@@ -15,7 +15,7 @@ interface DBUser {
 export default function UserManagement({ currentUser }: UserManagementProps) {
   const [users, setUsers] = useState<DBUser[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Form State
   const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -43,7 +43,7 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
   const handleSaveUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     // Create vs Update
     const url = editingUser ? `/api/users/${editingUser.id}` : '/api/users';
     const method = editingUser ? 'PUT' : 'POST';
@@ -52,24 +52,24 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
       const res = await fetch(url, {
         method: method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          username: newUsername, 
+        body: JSON.stringify({
+          username: newUsername,
           password: newPassword, // Can be empty if editing and keeping old password
-          role: newRole 
+          role: newRole
         })
       });
-      
+
       if (res.ok) {
         resetForm();
         fetchUsers();
-        alert(editingUser ? "User updated successfully" : "User created successfully");
+        alert(editingUser ? "Vartotojas sėkmingai atnaujintas" : "Vartotojas sėkmingai sukurtas");
       } else {
         const data = await res.json();
-        alert(data.error || "Failed to save user");
+        alert(data.error || "Nepavyko išsaugoti vartotojo");
       }
     } catch (e) {
       console.error(e);
-      alert("An error occurred");
+      alert("Įvyko klaida");
     } finally {
       setIsSubmitting(false);
     }
@@ -90,14 +90,14 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
   };
 
   const handleDeleteUser = async (id: number) => {
-    if (!window.confirm("Are you sure you want to delete this user?")) return;
+    if (!window.confirm("Ar tikrai norite ištrinti šį vartotoją?")) return;
     try {
       const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
       if (res.ok) {
         setUsers(prev => prev.filter(u => u.id !== id));
       } else {
         const data = await res.json();
-        alert(data.error || "Failed to delete");
+        alert(data.error || "Nepavyko ištrinti");
       }
     } catch (e) {
       console.error(e);
@@ -116,8 +116,8 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">User Management</h2>
-          <p className="text-gray-500">Manage system access and roles.</p>
+          <h2 className="text-2xl font-bold text-gray-900">Vartotojų valdymas</h2>
+          <p className="text-gray-500">Valdyti sistemos prieigą ir roles.</p>
         </div>
       </div>
 
@@ -127,22 +127,22 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
           <div className={`bg-white p-6 rounded-xl shadow-sm border ${editingUser ? 'border-blue-300' : 'border-gray-200'}`}>
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center justify-between">
               <span className="flex items-center gap-2">
-                {editingUser ? <Edit2 size={20} className="text-blue-600"/> : <UserPlus size={20} />}
-                {editingUser ? 'Edit User' : 'Add New User'}
+                {editingUser ? <Edit2 size={20} className="text-blue-600" /> : <UserPlus size={20} />}
+                {editingUser ? 'Redaguoti vartotoją' : 'Pridėti naują vartotoją'}
               </span>
               {editingUser && (
-                <button 
-                  onClick={resetForm} 
+                <button
+                  onClick={resetForm}
                   className="text-xs text-gray-500 hover:text-red-500 flex items-center gap-1 bg-gray-100 px-2 py-1 rounded"
                 >
-                  <X size={12} /> Cancel
+                  <X size={12} /> Atšaukti
                 </button>
               )}
             </h3>
-            
+
             <form onSubmit={handleSaveUser} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Vartotojo vardas</label>
                 <input
                   type="text"
                   required
@@ -153,27 +153,27 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {editingUser ? 'New Password (Optional)' : 'Password'}
+                  {editingUser ? 'Naujas slaptažodis (neprivaloma)' : 'Slaptažodis'}
                 </label>
                 <input
                   type="password"
                   required={!editingUser}
                   value={newPassword}
                   onChange={e => setNewPassword(e.target.value)}
-                  placeholder={editingUser ? "Leave blank to keep current" : ""}
+                  placeholder={editingUser ? "Palikite tuščią, jei nenorite keisti" : ""}
                   className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Rolė</label>
                 <select
                   value={newRole}
                   onChange={e => setNewRole(e.target.value as any)}
                   className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 >
-                  <option value="viewer">Viewer (Read-only)</option>
-                  <option value="sales">Sales (Manage Contracts)</option>
-                  <option value="admin">Admin (Full Access)</option>
+                  <option value="viewer">Stebėtojas (Tik skaityti)</option>
+                  <option value="sales">Vadybininkas (Valdyti sutartis)</option>
+                  <option value="admin">Administratorius (Pilna prieiga)</option>
                 </select>
               </div>
               <button
@@ -183,7 +183,7 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
                   ${editingUser ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'}
                 `}
               >
-                {isSubmitting ? 'Saving...' : editingUser ? 'Update User' : 'Create User'}
+                {isSubmitting ? 'Saugoma...' : editingUser ? 'Atnaujinti vartotoją' : 'Sukurti vartotoją'}
               </button>
             </form>
           </div>
@@ -195,14 +195,14 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
             <table className="w-full text-left">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-4 font-semibold text-gray-900">User</th>
-                  <th className="px-6 py-4 font-semibold text-gray-900">Role</th>
-                  <th className="px-6 py-4 font-semibold text-gray-900 text-right">Actions</th>
+                  <th className="px-6 py-4 font-semibold text-gray-900">Vartotojas</th>
+                  <th className="px-6 py-4 font-semibold text-gray-900">Rolė</th>
+                  <th className="px-6 py-4 font-semibold text-gray-900 text-right">Veiksmai</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {loading ? (
-                  <tr><td colSpan={3} className="p-6 text-center text-gray-500">Loading users...</td></tr>
+                  <tr><td colSpan={3} className="p-6 text-center text-gray-500">Kraunami vartotojai...</td></tr>
                 ) : users.map(u => (
                   <tr key={u.id} className={`hover:bg-gray-50 transition-colors ${editingUser?.id === u.id ? 'bg-blue-50' : ''}`}>
                     <td className="px-6 py-4">
@@ -220,19 +220,18 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
                         <button
                           onClick={() => handleEditClick(u)}
                           className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Edit User"
+                          title="Redaguoti vartotoją"
                         >
                           <Edit2 size={18} />
                         </button>
                         <button
                           onClick={() => handleDeleteUser(u.id)}
                           disabled={u.username === currentUser.username} // Can't delete self
-                          className={`p-2 rounded-lg transition-colors ${
-                            u.username === currentUser.username 
-                              ? 'text-gray-300 cursor-not-allowed' 
+                          className={`p-2 rounded-lg transition-colors ${u.username === currentUser.username
+                              ? 'text-gray-300 cursor-not-allowed'
                               : 'text-red-500 hover:bg-red-50'
-                          }`}
-                          title="Delete User"
+                            }`}
+                          title="Ištrinti vartotoją"
                         >
                           <Trash2 size={18} />
                         </button>

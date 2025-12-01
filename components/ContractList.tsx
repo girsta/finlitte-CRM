@@ -18,8 +18,8 @@ export default function ContractList({ user, contracts, onEdit, onDelete, onArch
     return (
       <div className="p-12 text-center text-gray-500">
         <FileText className="mx-auto w-12 h-12 text-gray-300 mb-4" />
-        <p className="text-lg">No contracts found.</p>
-        <p className="text-sm">Create a new contract or adjust your search.</p>
+        <p className="text-lg">Sutarčių nerasta.</p>
+        <p className="text-sm">Sukurkite naują sutartį arba pakeiskite paiešką.</p>
       </div>
     );
   }
@@ -40,11 +40,11 @@ export default function ContractList({ user, contracts, onEdit, onDelete, onArch
       <table className="w-full text-left text-sm text-gray-600">
         <thead className="bg-gray-50 border-b border-gray-200">
           <tr>
-            <th className="px-6 py-4 font-semibold text-gray-900">Client / Type</th>
-            <th className="px-6 py-4 font-semibold text-gray-900">Policy Details</th>
-            <th className="px-6 py-4 font-semibold text-gray-900">Validity</th>
-            <th className="px-6 py-4 font-semibold text-gray-900">Financials</th>
-            <th className="px-6 py-4 font-semibold text-gray-900 text-right">Actions</th>
+            <th className="px-6 py-4 font-semibold text-gray-900">Klientas / Tipas</th>
+            <th className="px-6 py-4 font-semibold text-gray-900">Poliso detalės</th>
+            <th className="px-6 py-4 font-semibold text-gray-900">Galiojimas</th>
+            <th className="px-6 py-4 font-semibold text-gray-900">Finansai</th>
+            <th className="px-6 py-4 font-semibold text-gray-900 text-right">Veiksmai</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
@@ -59,7 +59,7 @@ export default function ContractList({ user, contracts, onEdit, onDelete, onArch
                       <button
                         onClick={() => onViewNotes(contract)}
                         className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100 transition-colors"
-                        title={`${contract.notes.length} notes attached`}
+                        title={`${contract.notes.length} pastabos prisegtos`}
                       >
                         <StickyNote size={10} className="mr-0.5" />
                         {contract.notes.length}
@@ -68,7 +68,7 @@ export default function ContractList({ user, contracts, onEdit, onDelete, onArch
                   </div>
                   <div className="text-xs text-gray-500 mt-0.5 inline-flex items-center gap-1">
                     <span className="bg-gray-200 px-1.5 py-0.5 rounded">{contract.ldGrupe}</span>
-                    <span>Sales: {contract.pardavejas}</span>
+                    <span>Pardavėjas: {contract.pardavejas}</span>
                   </div>
                 </td>
                 <td className="px-6 py-4">
@@ -80,12 +80,12 @@ export default function ContractList({ user, contracts, onEdit, onDelete, onArch
                 </td>
                 <td className="px-6 py-4">
                   {contract.is_archived ? (
-                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border bg-gray-100 text-gray-600 border-gray-200">
-                       Archived
-                     </span>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border bg-gray-100 text-gray-600 border-gray-200">
+                      Archyvuota
+                    </span>
                   ) : (
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(status)}`}>
-                       {status === ExpiryStatus.EXPIRED ? 'Expired' : status === ExpiryStatus.WARNING ? 'Expiring' : 'Active'}
+                      {status === ExpiryStatus.EXPIRED ? 'Pasibaigę' : status === ExpiryStatus.WARNING ? 'Baigiasi' : 'Aktyvi'}
                     </span>
                   )}
                   <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
@@ -96,29 +96,29 @@ export default function ContractList({ user, contracts, onEdit, onDelete, onArch
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-1 text-gray-900 font-medium">
                     <DollarSign size={14} className="text-gray-400" />
-                    {contract.metineIsmoka.toFixed(2)} / yr
+                    {contract.metineIsmoka.toFixed(2)} / metams
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
-                    Value: {contract.ismoka.toFixed(2)}
+                    Vertė: {contract.ismoka.toFixed(2)}
                   </div>
                 </td>
-                
+
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-2">
                     <button
-                        onClick={() => onViewNotes(contract)}
-                        className="p-1.5 hover:bg-yellow-50 text-yellow-600 rounded transition-colors"
-                        title="View Notes"
-                      >
-                        <StickyNote size={16} />
+                      onClick={() => onViewNotes(contract)}
+                      className="p-1.5 hover:bg-yellow-50 text-yellow-600 rounded transition-colors"
+                      title="Žiūrėti pastabas"
+                    >
+                      <StickyNote size={16} />
                     </button>
 
                     <button
-                        onClick={() => onViewHistory(contract)}
-                        className="p-1.5 hover:bg-purple-50 text-purple-600 rounded transition-colors"
-                        title="View History"
-                      >
-                        <Clock size={16} />
+                      onClick={() => onViewHistory(contract)}
+                      className="p-1.5 hover:bg-purple-50 text-purple-600 rounded transition-colors"
+                      title="Žiūrėti istoriją"
+                    >
+                      <Clock size={16} />
                     </button>
 
                     {canEdit && (
@@ -126,7 +126,7 @@ export default function ContractList({ user, contracts, onEdit, onDelete, onArch
                         <button
                           onClick={() => contract.id && onArchiveToggle(contract.id)}
                           className="p-1.5 hover:bg-gray-100 text-gray-600 rounded transition-colors"
-                          title={contract.is_archived ? "Restore" : "Archive"}
+                          title={contract.is_archived ? "Atkurti" : "Archyvuoti"}
                         >
                           {contract.is_archived ? <RefreshCw size={16} /> : <Archive size={16} />}
                         </button>
@@ -134,18 +134,18 @@ export default function ContractList({ user, contracts, onEdit, onDelete, onArch
                         <button
                           onClick={() => onEdit(contract)}
                           className="p-1.5 hover:bg-blue-50 text-blue-600 rounded transition-colors"
-                          title="Edit"
+                          title="Redaguoti"
                         >
                           <Edit2 size={16} />
                         </button>
                       </>
                     )}
-                    
+
                     {canDelete && (
                       <button
                         onClick={() => contract.id && onDelete(contract.id)}
                         className="p-1.5 hover:bg-red-50 text-red-600 rounded transition-colors"
-                        title="Delete Permanently"
+                        title="Ištrinti negrįžtamai"
                       >
                         <Trash2 size={16} />
                       </button>

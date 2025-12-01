@@ -120,13 +120,13 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
       }
     } catch (e) {
       console.error("Save failed", e);
-      alert("Failed to save to server.");
+      alert("Nepavyko išsaugoti serveryje.");
     }
     setIsFormOpen(false);
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("Are you sure you want to PERMANENTLY delete this contract?")) return;
+    if (!window.confirm("Ar tikrai norite NEGRĮŽTAMAI ištrinti šią sutartį?")) return;
     try {
       setContracts(prev => prev.filter(c => c.id !== id));
       await fetch(`/api/contracts/${id}`, { method: 'DELETE' });
@@ -242,7 +242,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         return <CalendarView contracts={contracts} />;
 
       case 'users':
-        return user.role === 'admin' ? <UserManagement currentUser={user} /> : <div className="text-red-500">Access Denied</div>;
+        return user.role === 'admin' ? <UserManagement currentUser={user} /> : <div className="text-red-500">Prieiga uždrausta</div>;
 
       case 'tasks':
         return <TaskManager currentUser={user} />;
@@ -260,7 +260,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 <div className="bg-white rounded-xl shadow-sm border border-red-100 p-6 flex items-center justify-between relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-2 h-full bg-red-500"></div>
                   <div>
-                    <p className="text-sm font-medium text-gray-500 mb-1">Critical / Expired</p>
+                    <p className="text-sm font-medium text-gray-500 mb-1">Kritiniai / Pasibaigę</p>
                     <p className="text-3xl font-bold text-gray-900">{stats.red}</p>
                   </div>
                   <div className="bg-red-50 p-3 rounded-full text-red-600"><XCircle size={24} /></div>
@@ -268,7 +268,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 <div className="bg-white rounded-xl shadow-sm border border-yellow-100 p-6 flex items-center justify-between relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-2 h-full bg-yellow-400"></div>
                   <div>
-                    <p className="text-sm font-medium text-gray-500 mb-1">Expiring Soon</p>
+                    <p className="text-sm font-medium text-gray-500 mb-1">Baigiasi galiojimas</p>
                     <p className="text-3xl font-bold text-gray-900">{stats.yellow}</p>
                   </div>
                   <div className="bg-yellow-50 p-3 rounded-full text-yellow-600"><AlertTriangle size={24} /></div>
@@ -276,7 +276,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 <div className="bg-white rounded-xl shadow-sm border border-green-100 p-6 flex items-center justify-between relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-2 h-full bg-green-500"></div>
                   <div>
-                    <p className="text-sm font-medium text-gray-500 mb-1">Active Contracts</p>
+                    <p className="text-sm font-medium text-gray-500 mb-1">Aktyvios sutartys</p>
                     <p className="text-3xl font-bold text-gray-900">{stats.green}</p>
                   </div>
                   <div className="bg-green-50 p-3 rounded-full text-green-600"><CheckCircle size={24} /></div>
@@ -292,7 +292,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                   }`}
               >
                 <LayoutList size={18} />
-                Active Contracts
+                Aktyvios sutartys
               </button>
               <button
                 onClick={() => setViewArchived(true)}
@@ -300,7 +300,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                   }`}
               >
                 <Archive size={18} />
-                Archived
+                Archyvuotos
               </button>
             </div>
 
@@ -312,7 +312,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
                   <input
                     type="text"
-                    placeholder="Search by client, policy, or reg..."
+                    placeholder="Ieškoti pagal klientą, polisą ar reg. nr..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     onKeyDown={(e) => {
@@ -330,7 +330,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                   {isSearchFocused && searchHistory.length > 0 && (
                     <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-30">
                       <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
-                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Recent Searches</span>
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Paskutinės paieškos</span>
                         <button
                           onMouseDown={(e) => {
                             e.preventDefault();
@@ -338,7 +338,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                           }}
                           className="text-xs text-red-500 hover:text-red-700 font-medium"
                         >
-                          Clear
+                          Valyti
                         </button>
                       </div>
                       {searchHistory.map((term, i) => (
@@ -364,7 +364,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                   className="flex items-center gap-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2.5 rounded-lg font-medium transition-colors shadow-sm"
                 >
                   <Download size={20} />
-                  <span className="hidden sm:inline">Export CSV</span>
+                  <span className="hidden sm:inline">Eksportuoti CSV</span>
                 </button>
               </div>
 
@@ -374,7 +374,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                   className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors shadow-sm"
                 >
                   <Plus size={20} />
-                  New Contract
+                  Nauja sutartis
                 </button>
               )}
             </div>
@@ -383,7 +383,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             <div className="flex flex-wrap items-center gap-4 mb-6 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
               <div className="flex items-center gap-2 text-gray-600">
                 <Filter size={20} />
-                <span className="font-medium text-sm">Filters:</span>
+                <span className="font-medium text-sm">Filtrai:</span>
               </div>
 
               <select
@@ -391,7 +391,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 onChange={(e) => setFilterSalesperson(e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
               >
-                <option value="">All Salespersons</option>
+                <option value="">Visi vadybininkai</option>
                 {uniqueSalespersons.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
 
@@ -400,7 +400,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 onChange={(e) => setFilterType(e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
               >
-                <option value="">All Types</option>
+                <option value="">Visi tipai</option>
                 {uniqueTypes.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
 
@@ -409,10 +409,10 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 onChange={(e) => setFilterStatus(e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
               >
-                <option value="">All Statuses</option>
-                <option value="active">Active</option>
-                <option value="expiring">Expiring Soon</option>
-                <option value="expired">Expired</option>
+                <option value="">Visi statusai</option>
+                <option value="active">Aktyvūs</option>
+                <option value="expiring">Baigiasi galiojimas</option>
+                <option value="expired">Pasibaigę</option>
               </select>
 
               {(filterSalesperson || filterType || filterStatus) && (
@@ -420,7 +420,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                   onClick={() => { setFilterSalesperson(''); setFilterType(''); setFilterStatus(''); }}
                   className="text-sm text-red-600 hover:text-red-800 font-medium ml-auto"
                 >
-                  Clear Filters
+                  Valyti filtrus
                 </button>
               )}
             </div>

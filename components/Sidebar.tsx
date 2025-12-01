@@ -13,22 +13,28 @@ interface SidebarProps {
 
 export default function Sidebar({ user, activeView, setActiveView, onLogout, isOpen, setIsOpen }: SidebarProps) {
   const menuItems = [
-    { id: 'dashboard', label: 'All Contracts', icon: FileText, role: 'viewer' },
-    { id: 'calendar', label: 'Calendar', icon: Calendar, role: 'viewer' },
-    { id: 'tasks', label: 'Tasks', icon: CheckSquare, role: 'viewer' },
-    { id: 'users', label: 'User Admin Panel', icon: Users, role: 'admin' },
-    { id: 'settings', label: 'Settings', icon: Settings, role: 'viewer' },
+    { id: 'dashboard', label: 'Visos sutartys', icon: FileText, role: 'viewer' },
+    { id: 'calendar', label: 'Kalendorius', icon: Calendar, role: 'viewer' },
+    { id: 'tasks', label: 'Užduotys', icon: CheckSquare, role: 'viewer' },
+    { id: 'users', label: 'Vartotojų valdymas', icon: Users, role: 'admin' },
+    { id: 'settings', label: 'Nustatymai', icon: Settings, role: 'viewer' },
   ];
 
-  const filteredItems = menuItems.filter(item => 
+  const filteredItems = menuItems.filter(item =>
     item.role === 'viewer' || (item.role === 'admin' && user.role === 'admin')
   );
+
+  const roleMap: Record<string, string> = {
+    admin: 'Administratorius',
+    sales: 'Vadybininkas',
+    viewer: 'Stebėtojas'
+  };
 
   return (
     <>
       {/* Mobile Overlay */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-20 md:hidden"
           onClick={() => setIsOpen(false)}
         />
@@ -45,7 +51,7 @@ export default function Sidebar({ user, activeView, setActiveView, onLogout, isO
           <div className="flex items-center gap-2">
             {/* Replaced generic Shield with specific branding color implied by light theme */}
             <div className="w-8 h-8 flex items-center justify-center bg-blue-600 rounded-lg text-white">
-               <span className="font-bold text-lg">F</span>
+              <span className="font-bold text-lg">F</span>
             </div>
             <span className="text-xl font-bold tracking-tight text-gray-900">Finlitte</span>
           </div>
@@ -63,8 +69,8 @@ export default function Sidebar({ user, activeView, setActiveView, onLogout, isO
             <div className="overflow-hidden">
               <p className="font-semibold text-gray-900 truncate text-sm">{user.username}</p>
               <div className="flex items-center gap-1">
-                 <div className={`w-2 h-2 rounded-full ${user.role === 'admin' ? 'bg-purple-500' : 'bg-green-500'}`}></div>
-                 <p className="text-xs text-gray-500 uppercase tracking-wider font-medium">{user.role}</p>
+                <div className={`w-2 h-2 rounded-full ${user.role === 'admin' ? 'bg-purple-500' : 'bg-green-500'}`}></div>
+                <p className="text-xs text-gray-500 uppercase tracking-wider font-medium">{roleMap[user.role] || user.role}</p>
               </div>
             </div>
           </div>
@@ -84,8 +90,8 @@ export default function Sidebar({ user, activeView, setActiveView, onLogout, isO
                 }}
                 className={`
                   w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
-                  ${isActive 
-                    ? 'bg-blue-50 text-blue-700 border border-blue-100 shadow-sm' 
+                  ${isActive
+                    ? 'bg-blue-50 text-blue-700 border border-blue-100 shadow-sm'
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 border border-transparent'
                   }
                 `}
@@ -104,7 +110,7 @@ export default function Sidebar({ user, activeView, setActiveView, onLogout, isO
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors border border-transparent hover:border-red-100"
           >
             <LogOut size={20} />
-            Sign Out
+            Atsijungti
           </button>
         </div>
       </aside>

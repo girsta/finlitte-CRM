@@ -123,7 +123,7 @@ export default function TaskManager({ currentUser }: TaskManagerProps) {
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("Delete this task?")) return;
+    if (!window.confirm("Ištrinti šią užduotį?")) return;
     try {
       setTasks(prev => prev.filter(t => t.id !== id));
       await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
@@ -165,8 +165,8 @@ export default function TaskManager({ currentUser }: TaskManagerProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Task Manager</h2>
-          <p className="text-gray-500">Track assignments and to-dos.</p>
+          <h2 className="text-2xl font-bold text-gray-900">Užduočių valdymas</h2>
+          <p className="text-gray-500">Sekite užduotis ir darbus.</p>
         </div>
         {canManage && !isFormOpen && (
           <button
@@ -174,7 +174,7 @@ export default function TaskManager({ currentUser }: TaskManagerProps) {
             className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
             <Plus size={20} />
-            New Task
+            Nauja užduotis
           </button>
         )}
       </div>
@@ -183,36 +183,36 @@ export default function TaskManager({ currentUser }: TaskManagerProps) {
       {isFormOpen && (
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 animate-in slide-in-from-top-4">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold">{editingTask ? 'Edit Task' : 'Assign New Task'}</h3>
+            <h3 className="text-lg font-semibold">{editingTask ? 'Redaguoti užduotį' : 'Priskirti naują užduotį'}</h3>
             <button onClick={resetForm} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
           </div>
 
           <form onSubmit={handleSaveTask} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Pavadinimas</label>
               <input required type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full px-3 py-2 border rounded-lg" />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Aprašymas</label>
               <textarea value={description} onChange={e => setDescription(e.target.value)} className="w-full px-3 py-2 border rounded-lg" rows={2} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Assign To</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Priskirti kam</label>
               <select value={assignedTo} onChange={e => setAssignedTo(e.target.value)} className="w-full px-3 py-2 border rounded-lg">
-                <option value="">Select User...</option>
+                <option value="">Pasirinkite vartotoją...</option>
                 {users.map(u => (
                   <option key={u.id} value={u.username}>{u.username} ({u.role})</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Atlikimo data</label>
               <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className="w-full px-3 py-2 border rounded-lg" />
             </div>
             <div className="md:col-span-2 flex justify-end gap-2 pt-2">
-              <button type="button" onClick={resetForm} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
+              <button type="button" onClick={resetForm} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Atšaukti</button>
               <button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                {editingTask ? 'Update Task' : 'Assign Task'}
+                {editingTask ? 'Atnaujinti užduotį' : 'Priskirti užduotį'}
               </button>
             </div>
           </form>
@@ -222,10 +222,10 @@ export default function TaskManager({ currentUser }: TaskManagerProps) {
       {/* Task List */}
       <div className="grid grid-cols-1 gap-4">
         {loading ? (
-          <div className="text-center py-10 text-gray-500">Loading tasks...</div>
+          <div className="text-center py-10 text-gray-500">Kraunamos užduotys...</div>
         ) : tasks.length === 0 ? (
           <div className="text-center py-10 text-gray-500 bg-white rounded-xl border border-dashed border-gray-300">
-            No tasks found.
+            Užduočių nerasta.
           </div>
         ) : (
           tasks.map(task => (
@@ -247,10 +247,10 @@ export default function TaskManager({ currentUser }: TaskManagerProps) {
                     <div className="flex flex-wrap items-center gap-4 mt-3 text-xs text-gray-500">
                       <div className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded">
                         <UserIcon size={12} />
-                        <span>To: {task.assigned_to}</span>
+                        <span>Kam: {task.assigned_to}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <span className="font-medium">By:</span> {task.created_by}
+                        <span className="font-medium">Nuo:</span> {task.created_by}
                       </div>
                       {task.due_date && (
                         <div className="flex items-center gap-1 text-orange-600 bg-orange-50 px-2 py-1 rounded">
@@ -263,7 +263,7 @@ export default function TaskManager({ currentUser }: TaskManagerProps) {
                         className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${expandedTaskId === task.id ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'}`}
                       >
                         <MessageSquare size={12} />
-                        {task.comments?.length || 0} Comments
+                        {task.comments?.length || 0} Komentarai
                       </button>
                     </div>
 
@@ -282,7 +282,7 @@ export default function TaskManager({ currentUser }: TaskManagerProps) {
                               </div>
                             ))
                           ) : (
-                            <p className="text-sm text-gray-400 italic">No comments yet.</p>
+                            <p className="text-sm text-gray-400 italic">Komentarų dar nėra.</p>
                           )}
                         </div>
 
@@ -291,7 +291,7 @@ export default function TaskManager({ currentUser }: TaskManagerProps) {
                             type="text"
                             value={commentText}
                             onChange={(e) => setCommentText(e.target.value)}
-                            placeholder="Write a comment..."
+                            placeholder="Rašyti komentarą..."
                             className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' && !e.shiftKey) {
@@ -318,14 +318,14 @@ export default function TaskManager({ currentUser }: TaskManagerProps) {
                     <button
                       onClick={() => openEditForm(task)}
                       className="text-gray-400 hover:text-blue-500 p-2 hover:bg-blue-50 rounded-lg transition-colors"
-                      title="Edit Task"
+                      title="Redaguoti užduotį"
                     >
                       <Edit2 size={18} />
                     </button>
                     <button
                       onClick={() => handleDelete(task.id)}
                       className="text-gray-400 hover:text-red-500 p-2 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Delete Task"
+                      title="Ištrinti užduotį"
                     >
                       <Trash2 size={18} />
                     </button>

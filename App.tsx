@@ -57,10 +57,10 @@ export default function App() {
       {serverError && (
         <div className="bg-red-500 text-white p-2 text-center flex items-center justify-center gap-2">
           <AlertCircle size={16} />
-          <span>Cannot connect to backend server. Ensure server.js is running.</span>
+          <span>Nepavyko prisijungti prie serverio. Įsitikinkite, kad serveris veikia.</span>
         </div>
       )}
-      
+
       {!user ? (
         <Login onLogin={handleLogin} setServerError={setServerError} />
       ) : (

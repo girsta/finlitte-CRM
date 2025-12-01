@@ -31,23 +31,23 @@ export default function CalendarView({ contracts }: CalendarViewProps) {
   };
 
   const daysInMonth = getDaysInMonth(currentDate);
-  const firstDay = getFirstDayOfMonth(currentDate); 
-  
+  const firstDay = getFirstDayOfMonth(currentDate);
+
   const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const emptySlots = Array.from({ length: firstDay }, (_, i) => i);
 
-  const monthNames = ["January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
+  const monthNames = ["Sausis", "Vasaris", "Kovas", "Balandis", "Gegužė", "Birželis",
+    "Liepa", "Rugpjūtis", "Rugsėjis", "Spalis", "Lapkritis", "Gruodis"
   ];
 
   // Helper to find contracts expiring on a specific day
   const getContractsForDay = (day: number) => {
     return contracts.filter(c => {
       const d = new Date(c.galiojaIki);
-      return !c.is_archived && 
-             d.getDate() === day && 
-             d.getMonth() === currentDate.getMonth() && 
-             d.getFullYear() === currentDate.getFullYear();
+      return !c.is_archived &&
+        d.getDate() === day &&
+        d.getMonth() === currentDate.getMonth() &&
+        d.getFullYear() === currentDate.getFullYear();
     });
   };
 
@@ -56,7 +56,7 @@ export default function CalendarView({ contracts }: CalendarViewProps) {
       {/* Header - Fixed at top */}
       <div className="p-6 border-b border-gray-100 flex items-center justify-between shrink-0 bg-white z-10">
         <h2 className="text-xl font-bold text-gray-900">
-          Contract Expiry Calendar
+          Sutarčių galiojimo kalendorius
         </h2>
         <div className="flex items-center gap-4">
           <span className="text-lg font-medium w-40 text-center">
@@ -78,7 +78,7 @@ export default function CalendarView({ contracts }: CalendarViewProps) {
         <div className="min-w-[900px] h-full flex flex-col">
           {/* Grid Header */}
           <div className="grid grid-cols-7 border-b border-gray-200 bg-gray-50 shrink-0 sticky top-0 z-10">
-            {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
+            {['Pr', 'An', 'Tr', 'Kt', 'Pn', 'Št', 'Sk'].map(day => (
               <div key={day} className="py-3 text-center text-sm font-semibold text-gray-500 bg-gray-50">
                 {day}
               </div>
@@ -90,17 +90,17 @@ export default function CalendarView({ contracts }: CalendarViewProps) {
             {emptySlots.map(slot => (
               <div key={`empty-${slot}`} className="bg-gray-50/30 border-b border-r border-gray-100 min-h-[120px]"></div>
             ))}
-            
+
             {daysArray.map(day => {
               const dayContracts = getContractsForDay(day);
-              const isToday = 
-                day === new Date().getDate() && 
-                currentDate.getMonth() === new Date().getMonth() && 
+              const isToday =
+                day === new Date().getDate() &&
+                currentDate.getMonth() === new Date().getMonth() &&
                 currentDate.getFullYear() === new Date().getFullYear();
 
               return (
-                <div 
-                  key={day} 
+                <div
+                  key={day}
                   className={`
                     min-h-[120px] p-2 border-b border-r border-gray-100 relative group hover:bg-gray-50 transition-colors
                     ${isToday ? 'bg-blue-50/30' : ''}
@@ -118,7 +118,7 @@ export default function CalendarView({ contracts }: CalendarViewProps) {
                       <div key={c.id} className="text-xs p-1.5 rounded bg-red-100 text-red-800 border border-red-200 truncate cursor-pointer hover:opacity-80" title={`${c.draudejas} - ${c.policyNo}`}>
                         <div className="flex items-center gap-1 font-semibold">
                           <AlertCircle size={10} />
-                          Expiry
+                          Baigiasi
                         </div>
                         <div className="truncate">{c.draudejas}</div>
                       </div>
@@ -127,10 +127,10 @@ export default function CalendarView({ contracts }: CalendarViewProps) {
                 </div>
               );
             })}
-            
+
             {/* Fill remaining cells to complete the grid row if needed (optional visual polish) */}
             {Array.from({ length: (7 - ((emptySlots.length + daysArray.length) % 7)) % 7 }).map((_, i) => (
-               <div key={`fill-${i}`} className="bg-gray-50/30 border-b border-r border-gray-100 min-h-[120px]"></div>
+              <div key={`fill-${i}`} className="bg-gray-50/30 border-b border-r border-gray-100 min-h-[120px]"></div>
             ))}
           </div>
         </div>
