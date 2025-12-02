@@ -75,7 +75,8 @@ db.serialize(() => {
     status TEXT DEFAULT 'pending',
     due_date TEXT,
     created_at TEXT,
-    comments TEXT
+    comments TEXT,
+    completed_at TEXT
   )`);
 
   // --- Migrations for existing databases ---
@@ -139,6 +140,15 @@ db.serialize(() => {
     if (rows && !rows.some(r => r.name === 'comments')) {
       console.log("Migrating: Adding comments column to tasks table");
       db.run("ALTER TABLE tasks ADD COLUMN comments TEXT");
+    }
+  });
+
+  // Check for 'completed_at' in tasks
+  db.all("PRAGMA table_info(tasks)", (err, rows) => {
+    if (err) console.error(err);
+    if (rows && !rows.some(r => r.name === 'completed_at')) {
+      console.log("Migrating: Adding completed_at column to tasks table");
+      db.run("ALTER TABLE tasks ADD COLUMN completed_at TEXT");
     }
   });
 

@@ -405,23 +405,37 @@ app.get('/api/tasks', isAuthenticated, (req, res) => {
   const role = req.session.role;
   const username = req.session.username;
 
-  let sql = 'SELECT * FROM tasks ORDER BY created_at DESC';
-  let params = [];
+  // 1. Auto-delete old completed tasks (older than 7 days)
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const cleanupDate = sevenDaysAgo.toISOString();
 
-  if (role !== 'admin') {
-    sql = 'SELECT * FROM tasks WHERE assigned_to = ? ORDER BY created_at DESC';
-    params = [username];
-  }
+  db.run("DELETE FROM tasks WHERE status = 'completed' AND completed_at < ?", [cleanupDate], (err) => {
+    if (err) console.error("Error cleaning up old tasks:", err);
 
-  db.all(sql, params, (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
+    // 2. Fetch remaining tasks
+    let sql = `SELECT * FROM tasks ORDER BY 
+               CASE WHEN status = 'completed' THEN 1 ELSE 0 END, 
+               due_date ASC`;
+    let params = [];
 
-    const tasks = rows.map(row => ({
-      ...row,
-      comments: row.comments ? JSON.parse(row.comments) : []
-    }));
+    if (role !== 'admin') {
+      sql = `SELECT * FROM tasks WHERE assigned_to = ? ORDER BY 
+             CASE WHEN status = 'completed' THEN 1 ELSE 0 END, 
+             due_date ASC`;
+      params = [username];
+    }
 
-    res.json(tasks);
+    db.all(sql, params, (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      const tasks = rows.map(row => ({
+        ...row,
+        comments: row.comments ? JSON.parse(row.comments) : []
+      }));
+
+      res.json(tasks);
+    });
   });
 });
 
@@ -454,8 +468,9 @@ app.put('/api/tasks/:id', isAuthenticated, hasRole(['admin']), (req, res) => {
 
 app.patch('/api/tasks/:id/status', isAuthenticated, (req, res) => {
   const { status } = req.body;
-  // TODO: Add check to ensure user is assigned to task or is admin
-  db.run("UPDATE tasks SET status = ? WHERE id = ?", [status, req.params.id], function (err) {
+  const completedAt = status === 'completed' ? new Date().toISOString() : null;
+
+  db.run("UPDATE tasks SET status = ?, completed_at = ? WHERE id = ?", [status, completedAt, req.params.id], function (err) {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ message: 'Status updated' });
   });

@@ -148,12 +148,17 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
   const getStatus = (dateStr: string): ExpiryStatus => {
     const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize today to midnight
+
     const expiry = new Date(dateStr);
+    // Normalize expiry to midnight to ensure fair comparison
+    expiry.setHours(0, 0, 0, 0);
+
     const diffTime = expiry.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    if (diffDays <= 7) return ExpiryStatus.EXPIRED;
-    if (diffDays <= 14) return ExpiryStatus.WARNING;
+    if (diffDays < 0) return ExpiryStatus.EXPIRED; // Strictly past dates
+    if (diffDays <= 30) return ExpiryStatus.WARNING; // Expiring in the next 30 days
     return ExpiryStatus.VALID;
   };
 
@@ -239,7 +244,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const renderContent = () => {
     switch (activeView) {
       case 'calendar':
-        return <CalendarView contracts={contracts} />;
+        return <CalendarView contracts={contracts} onContractClick={(c) => { setEditingContract(c); setIsFormOpen(true); }} />;
 
       case 'users':
         return user.role === 'admin' ? <UserManagement currentUser={user} /> : <div className="text-red-500">Prieiga uždrausta</div>;

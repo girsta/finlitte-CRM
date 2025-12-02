@@ -4,9 +4,10 @@ import { ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
 
 interface CalendarViewProps {
   contracts: Contract[];
+  onContractClick: (contract: Contract) => void;
 }
 
-export default function CalendarView({ contracts }: CalendarViewProps) {
+export default function CalendarView({ contracts, onContractClick }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const getDaysInMonth = (date: Date) => {
@@ -130,6 +131,10 @@ export default function CalendarView({ contracts }: CalendarViewProps) {
                             }
                           `}
                           title={`${c.draudejas} - ${c.policyNo}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onContractClick(c);
+                          }}
                         >
                           <div className="flex items-center gap-1 font-semibold">
                             <AlertCircle size={10} />

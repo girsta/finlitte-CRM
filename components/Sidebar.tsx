@@ -64,10 +64,12 @@ export default function Sidebar({ user, activeView, setActiveView, onLogout, isO
         <div className="px-6 py-6 border-b border-gray-100 bg-gray-50/50">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-lg font-bold text-blue-700 border border-blue-200">
-              {user.username.charAt(0).toUpperCase()}
+              {(user.full_name || user.username).charAt(0).toUpperCase()}
             </div>
             <div className="overflow-hidden">
-              <p className="font-semibold text-gray-900 truncate text-sm">{user.username}</p>
+              <p className="font-semibold text-gray-900 truncate text-sm" title={user.full_name || user.username}>
+                {user.full_name || "NUSISTATYKITE SAVO VARDA PAVARDE"}
+              </p>
               <div className="flex items-center gap-1">
                 <div className={`w-2 h-2 rounded-full ${user.role === 'admin' ? 'bg-purple-500' : 'bg-green-500'}`}></div>
                 <p className="text-xs text-gray-500 uppercase tracking-wider font-medium">{roleMap[user.role] || user.role}</p>

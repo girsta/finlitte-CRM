@@ -95,11 +95,10 @@ export default function ContractList({ user, contracts, onEdit, onDelete, onArch
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-1 text-gray-900 font-medium">
-                    <DollarSign size={14} className="text-gray-400" />
-                    {contract.metineIsmoka.toFixed(2)} / metams
+                    <span className="font-semibold text-gray-900">{contract.metineIsmoka.toFixed(2)} €</span> / metams
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
-                    Vertė: {contract.ismoka.toFixed(2)}
+                    Vertė: {contract.ismoka.toFixed(2)} €
                   </div>
                 </td>
 

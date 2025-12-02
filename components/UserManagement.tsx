@@ -9,6 +9,7 @@ interface UserManagementProps {
 interface DBUser {
   id: number;
   username: string;
+  full_name?: string;
   role: 'admin' | 'sales' | 'viewer';
 }
 
@@ -206,8 +207,8 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
                 ) : users.map(u => (
                   <tr key={u.id} className={`hover:bg-gray-50 transition-colors ${editingUser?.id === u.id ? 'bg-blue-50' : ''}`}>
                     <td className="px-6 py-4">
-                      <div className="font-medium text-gray-900">{u.username}</div>
-                      <div className="text-xs text-gray-400">ID: {u.id}</div>
+                      <div className="font-medium text-gray-900">{u.full_name || "NENUSTATYTA"}</div>
+                      <div className="text-xs text-gray-400">@{u.username}</div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2 capitalize">
@@ -228,8 +229,8 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
                           onClick={() => handleDeleteUser(u.id)}
                           disabled={u.username === currentUser.username} // Can't delete self
                           className={`p-2 rounded-lg transition-colors ${u.username === currentUser.username
-                              ? 'text-gray-300 cursor-not-allowed'
-                              : 'text-red-500 hover:bg-red-50'
+                            ? 'text-gray-300 cursor-not-allowed'
+                            : 'text-red-500 hover:bg-red-50'
                             }`}
                           title="Ištrinti vartotoją"
                         >
