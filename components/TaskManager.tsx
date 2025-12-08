@@ -227,117 +227,127 @@ export default function TaskManager({ currentUser }: TaskManagerProps) {
             Užduočių nerasta.
           </div>
         ) : (
-          tasks.map(task => (
-            <div key={task.id} className={`bg-white p-4 rounded-xl shadow-sm border transition-all ${task.status === 'completed' ? 'border-gray-200 bg-gray-50' : 'border-blue-100'}`}>
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-3 flex-1">
-                  <button
-                    onClick={() => toggleStatus(task)}
-                    className={`mt-1 transition-colors ${task.status === 'completed' ? 'text-green-500' : 'text-gray-300 hover:text-blue-500'}`}
-                  >
-                    {task.status === 'completed' ? <CheckCircle size={24} /> : <Circle size={24} />}
-                  </button>
-                  <div className="flex-1">
-                    <h4 className={`font-semibold text-lg break-all ${task.status === 'completed' ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
-                      {task.title}
-                    </h4>
-                    <p className="text-gray-600 text-sm mt-1 break-all whitespace-pre-wrap">{task.description}</p>
+          tasks.map(task => {
+            const isOverdue = task.due_date ? new Date(task.due_date) < new Date() && task.status !== 'completed' : false;
+            return (
+              <div key={task.id} className={`bg-white p-4 rounded-xl shadow-sm border transition-all ${task.status === 'completed'
+                  ? 'border-gray-200 bg-gray-50'
+                  : isOverdue
+                    ? 'border-red-300 bg-red-50'
+                    : 'border-blue-100'
+                }`}>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3 flex-1">
+                    <button
+                      onClick={() => toggleStatus(task)}
+                      className={`mt-1 transition-colors ${task.status === 'completed' ? 'text-green-500' : 'text-gray-300 hover:text-blue-500'}`}
+                    >
+                      {task.status === 'completed' ? <CheckCircle size={24} /> : <Circle size={24} />}
+                    </button>
+                    <div className="flex-1">
+                      <h4 className={`font-semibold text-lg break-all ${task.status === 'completed' ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
+                        {task.title}
+                      </h4>
+                      <p className="text-gray-600 text-sm mt-1 break-all whitespace-pre-wrap">{task.description}</p>
 
-                    <div className="flex flex-wrap items-center gap-4 mt-3 text-xs text-gray-500">
-                      <div className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded">
-                        <UserIcon size={12} />
-                        <span>Kam: {task.assigned_to}</span>
+                      <div className="flex flex-wrap items-center gap-4 mt-3 text-xs text-gray-500">
+                        <div className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded">
+                          <UserIcon size={12} />
+                          <span>Kam: {task.assigned_to}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="font-medium">Nuo:</span> {task.created_by}
+                        </div>
+                        {task.due_date && (
+                          <div className={`flex items-center gap-1 px-2 py-1 rounded ${isOverdue ? 'text-red-700 bg-red-100 font-medium' : 'text-orange-600 bg-orange-50'
+                            }`}>
+                            <Calendar size={12} />
+                            {new Date(task.due_date).toLocaleDateString()}
+                            {isOverdue && <span className="ml-1 text-[10px] uppercase font-bold">Vėluoja</span>}
+                          </div>
+                        )}
+                        <button
+                          onClick={() => setExpandedTaskId(expandedTaskId === task.id ? null : task.id)}
+                          className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${expandedTaskId === task.id ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'}`}
+                        >
+                          <MessageSquare size={12} />
+                          {task.comments?.length || 0} Komentarai
+                        </button>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <span className="font-medium">Nuo:</span> {task.created_by}
-                      </div>
-                      {task.due_date && (
-                        <div className="flex items-center gap-1 text-orange-600 bg-orange-50 px-2 py-1 rounded">
-                          <Calendar size={12} />
-                          {new Date(task.due_date).toLocaleDateString()}
+
+                      {/* Comments Section */}
+                      {expandedTaskId === task.id && (
+                        <div className="mt-4 pt-4 border-t border-gray-100 animate-in slide-in-from-top-2">
+                          <div className="space-y-3 mb-4">
+                            {task.comments && task.comments.length > 0 ? (
+                              task.comments.map(comment => (
+                                <div key={comment.id} className="bg-gray-50 p-3 rounded-lg text-sm">
+                                  <div className="flex justify-between items-center mb-1">
+                                    <span className="font-semibold text-gray-700">
+                                      {(() => {
+                                        const u = users.find(user => user.username === comment.author);
+                                        return u?.full_name || comment.author;
+                                      })()}
+                                    </span>
+                                    <span className="text-xs text-gray-400">{new Date(comment.timestamp).toLocaleString()}</span>
+                                  </div>
+                                  <p className="text-gray-600">{comment.text}</p>
+                                </div>
+                              ))
+                            ) : (
+                              <p className="text-sm text-gray-400 italic">Komentarų dar nėra.</p>
+                            )}
+                          </div>
+
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={commentText}
+                              onChange={(e) => setCommentText(e.target.value)}
+                              placeholder="Rašyti komentarą..."
+                              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                  e.preventDefault();
+                                  handleAddComment(task.id);
+                                }
+                              }}
+                            />
+                            <button
+                              onClick={() => handleAddComment(task.id)}
+                              disabled={!commentText.trim()}
+                              className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                              <Send size={18} />
+                            </button>
+                          </div>
                         </div>
                       )}
+                    </div>
+                  </div>
+
+                  {canManage && (
+                    <div className="flex items-center gap-1">
                       <button
-                        onClick={() => setExpandedTaskId(expandedTaskId === task.id ? null : task.id)}
-                        className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${expandedTaskId === task.id ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'}`}
+                        onClick={() => openEditForm(task)}
+                        className="text-gray-400 hover:text-blue-500 p-2 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Redaguoti užduotį"
                       >
-                        <MessageSquare size={12} />
-                        {task.comments?.length || 0} Komentarai
+                        <Edit2 size={18} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(task.id)}
+                        className="text-gray-400 hover:text-red-500 p-2 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Ištrinti užduotį"
+                      >
+                        <Trash2 size={18} />
                       </button>
                     </div>
-
-                    {/* Comments Section */}
-                    {expandedTaskId === task.id && (
-                      <div className="mt-4 pt-4 border-t border-gray-100 animate-in slide-in-from-top-2">
-                        <div className="space-y-3 mb-4">
-                          {task.comments && task.comments.length > 0 ? (
-                            task.comments.map(comment => (
-                              <div key={comment.id} className="bg-gray-50 p-3 rounded-lg text-sm">
-                                <div className="flex justify-between items-center mb-1">
-                                  <span className="font-semibold text-gray-700">
-                                    {(() => {
-                                      const u = users.find(user => user.username === comment.author);
-                                      return u?.full_name || comment.author;
-                                    })()}
-                                  </span>
-                                  <span className="text-xs text-gray-400">{new Date(comment.timestamp).toLocaleString()}</span>
-                                </div>
-                                <p className="text-gray-600">{comment.text}</p>
-                              </div>
-                            ))
-                          ) : (
-                            <p className="text-sm text-gray-400 italic">Komentarų dar nėra.</p>
-                          )}
-                        </div>
-
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            value={commentText}
-                            onChange={(e) => setCommentText(e.target.value)}
-                            placeholder="Rašyti komentarą..."
-                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                handleAddComment(task.id);
-                              }
-                            }}
-                          />
-                          <button
-                            onClick={() => handleAddComment(task.id)}
-                            disabled={!commentText.trim()}
-                            className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                          >
-                            <Send size={18} />
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  )}
                 </div>
-
-                {canManage && (
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => openEditForm(task)}
-                      className="text-gray-400 hover:text-blue-500 p-2 hover:bg-blue-50 rounded-lg transition-colors"
-                      title="Redaguoti užduotį"
-                    >
-                      <Edit2 size={18} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(task.id)}
-                      className="text-gray-400 hover:text-red-500 p-2 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Ištrinti užduotį"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                )}
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>

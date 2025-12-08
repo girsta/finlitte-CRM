@@ -137,16 +137,31 @@ app.post('/logout', (req, res) => {
 
 // Get Active Contracts
 app.get('/api/contracts', isAuthenticated, (req, res) => {
-  db.all('SELECT * FROM contracts WHERE is_archived = 0 ORDER BY galiojaIki ASC', [], (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
+  // Auto-archive expired contracts (simpler logic: on fetch)
+  const today = new Date().toISOString().split('T')[0];
+  db.run("UPDATE contracts SET is_archived = 1 WHERE galiojaIki < ? AND is_archived = 0", [today], (err) => {
+    if (err) console.error("Auto-archive error:", err);
 
-    const contracts = rows.map(row => ({
-      ...row,
-      notes: row.notes ? JSON.parse(row.notes) : [],
-      is_archived: !!row.is_archived
-    }));
+    // Auto-delete archived/expired contracts older than 30 days
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const cleanupDate = thirtyDaysAgo.toISOString().split('T')[0];
 
-    res.json(contracts);
+    db.run("DELETE FROM contracts WHERE galiojaIki < ?", [cleanupDate], (delErr) => {
+      if (delErr) console.error("Auto-delete expired contracts error:", delErr);
+
+      db.all('SELECT * FROM contracts WHERE is_archived = 0 ORDER BY galiojaIki ASC', [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        const contracts = rows.map(row => ({
+          ...row,
+          notes: row.notes ? JSON.parse(row.notes) : [],
+          is_archived: !!row.is_archived
+        }));
+
+        res.json(contracts);
+      });
+    });
   });
 });
 
@@ -592,10 +607,12 @@ app.post('/api/webhook/n8n', async (req, res) => {
         draudejas: getValue(item, 'Draudėjo pavadinimas') || getValue(item, 'KLIENTAS') || getValue(item, 'draudejas') || 'Unknown',
 
         // Look for "Kuratorius" OR "Brokeris" OR "Pardavejas"
-        pardavejas: getValue(item, 'Kuratorius') || getValue(item, 'BROKERIS') || getValue(item, 'pardavejas') || '',
+        // Look for "Kuratorius" OR "Brokeris" OR "Pardavejas" OR "Pardavėjo darbuotojas"
+        pardavejas: getValue(item, 'Kuratorius') || getValue(item, 'BROKERIS') || getValue(item, 'Pardavėjo darbuotojas') || getValue(item, 'pardavejas') || '',
 
         // Look for "Draudimo rūšis" OR "Draudimo produktas"
-        ldGrupe: (getValue(item, 'Draudimo rūšis') || getValue(item, 'Draudimo produktas') || getValue(item, 'DRAUDIMO_PRODUKTAS') || getValue(item, 'ldGrupe') || '').trim(),
+        // Look for "Draudimo rūšis" OR "Draudimo produktas" OR "LD grupės pavadinimas"
+        ldGrupe: (getValue(item, 'Draudimo rūšis') || getValue(item, 'Draudimo produktas') || getValue(item, 'DRAUDIMO_PRODUKTAS') || getValue(item, 'LD grupės pavadinimas') || getValue(item, 'ldGrupe') || '').trim(),
 
         policyNo: String(policyNo).trim(),
 

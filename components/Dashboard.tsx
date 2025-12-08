@@ -365,7 +365,7 @@ export default function Dashboard({ user, onLogout, onUserUpdate }: DashboardPro
                   }`}
               >
                 <Archive size={18} />
-                Archyvuotos
+                Pasibaigusios
               </button>
             </div>
 
