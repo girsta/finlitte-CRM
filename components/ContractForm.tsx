@@ -23,6 +23,8 @@ export default function ContractForm({ onClose, onSave, initialData, initialMode
     valstybinisNr: '',
     metineIsmoka: 0,
     ismoka: 0,
+
+    atnaujinimoData: new Date().toISOString().split('T')[0],
     notes: []
   });
 
@@ -399,6 +401,10 @@ export default function ContractForm({ onClose, onSave, initialData, initialMode
               <div className="grid grid-cols-2 gap-4">
                 {renderField('Metinė įmoka', formData.metineIsmoka, 'number', 'metineIsmoka')}
                 {renderField('Išmokos vertė', formData.ismoka, 'number', 'ismoka')}
+              </div>
+
+              <div className="grid grid-cols-1 gap-4">
+                {renderField('Atnaujinimo data', formData.atnaujinimoData || '', 'date', 'atnaujinimoData')}
               </div>
             </div>
           </div>
