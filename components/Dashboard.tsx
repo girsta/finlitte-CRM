@@ -33,6 +33,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
   // Modals
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [formMode, setFormMode] = useState<'view' | 'edit'>('edit');
   const [editingContract, setEditingContract] = useState<Contract | undefined>(undefined);
   const [historyContract, setHistoryContract] = useState<Contract | null>(null);
   const [notesContract, setNotesContract] = useState<Contract | null>(null);
@@ -302,7 +303,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const renderContent = () => {
     switch (activeView) {
       case 'calendar':
-        return <CalendarView contracts={contracts} onContractClick={(c) => { setEditingContract(c); setIsFormOpen(true); }} />;
+        return <CalendarView contracts={contracts} onContractClick={(c) => { setEditingContract(c); setFormMode('view'); setIsFormOpen(true); }} />;
 
       case 'users':
         return user.role === 'admin' ? <UserManagement currentUser={user} /> : <div className="text-red-500">Prieiga uždrausta</div>;
@@ -448,7 +449,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                     Įkelti sutartį
                   </button>
                   <button
-                    onClick={() => { setEditingContract(undefined); setIsFormOpen(true); }}
+                    onClick={() => { setEditingContract(undefined); setFormMode('edit'); setIsFormOpen(true); }}
                     className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors shadow-sm"
                   >
                     <Plus size={20} />
@@ -509,7 +510,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
               <ContractList
                 user={user}
                 contracts={filteredContracts}
-                onEdit={(c) => { setEditingContract(c); setIsFormOpen(true); }}
+                onEdit={(c) => { setEditingContract(c); setFormMode('edit'); setIsFormOpen(true); }}
                 onDelete={handleDelete}
                 onArchiveToggle={handleArchiveToggle}
                 onViewHistory={(c) => setHistoryContract(c)}
@@ -561,6 +562,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           onClose={() => setIsFormOpen(false)}
           onSave={handleSave}
           initialData={editingContract}
+          initialMode={formMode}
         />
       )}
 

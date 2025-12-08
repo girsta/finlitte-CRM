@@ -6,11 +6,13 @@ interface ContractFormProps {
   onClose: () => void;
   onSave: (contract: Contract) => void;
   initialData?: Contract;
+  initialMode?: 'view' | 'edit';
 }
 
 const DRAFT_KEY = 'finlitte_new_contract_draft';
 
-export default function ContractForm({ onClose, onSave, initialData }: ContractFormProps) {
+export default function ContractForm({ onClose, onSave, initialData, initialMode = 'edit' }: ContractFormProps) {
+  const [mode, setMode] = useState<'view' | 'edit'>(initialMode);
   const [formData, setFormData] = useState<Contract>({
     draudejas: '',
     pardavejas: '',
@@ -58,9 +60,10 @@ export default function ContractForm({ onClose, onSave, initialData }: ContractF
 
   // Auto-save effect
   useEffect(() => {
-    // Don't auto-save if we are editing an existing contract, 
+    // Don't auto-save if we are editing an existing contract (unless we want to support it there too?), 
     // or if the draft prompt is currently visible (to avoid overwriting the draft with empty state)
-    if (initialData || showDraftPrompt) return;
+    // Also logic: only auto-save if mode is edit
+    if (initialData || showDraftPrompt || mode === 'view') return;
 
     const timeoutId = setTimeout(() => {
       // Only save if some data has been entered
@@ -73,7 +76,7 @@ export default function ContractForm({ onClose, onSave, initialData }: ContractF
     }, 800); // Debounce save by 800ms
 
     return () => clearTimeout(timeoutId);
-  }, [formData, noteInput, initialData, showDraftPrompt]);
+  }, [formData, noteInput, initialData, showDraftPrompt, mode]);
 
   const handleRestoreDraft = () => {
     try {
@@ -281,22 +284,67 @@ export default function ContractForm({ onClose, onSave, initialData }: ContractF
     }
   };
 
+  const renderField = (label: string, value: string | number, type: string = 'text', field?: keyof Contract, required = false) => {
+    if (mode === 'view') {
+      return (
+        <div>
+          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 opacity-70">{label}</label>
+          <div className="text-gray-900 font-medium text-base py-1 border-b border-gray-100 min-h-[1.5em]">
+            {value || '-'}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+        <input
+          required={required}
+          type={type}
+          step={type === 'number' ? '0.01' : undefined}
+          value={value}
+          onChange={e => field && setFormData({ ...formData, [field]: type === 'number' ? parseFloat(e.target.value) : e.target.value })}
+          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-shadow"
+        />
+      </div>
+    );
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto flex flex-col">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto flex flex-col animate-in fade-in zoom-in-95 duration-200">
         <div className="sticky top-0 bg-white border-b border-gray-100 z-10">
           {/* Header */}
           <div className="px-6 py-4 flex items-center justify-between">
-            <h2 className="text-xl font-bold text-gray-900">
-              {initialData ? 'Redaguoti sutartį' : 'Nauja sutartis'}
+            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              {mode === 'view' ? (
+                <>
+                  <FileText className="text-blue-500" />
+                  Sutarties peržiūra
+                </>
+              ) : (
+                <>{initialData ? 'Redaguoti sutartį' : 'Nauja sutartis'}</>
+              )}
             </h2>
-            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full text-gray-500">
-              <X size={20} />
-            </button>
+            <div className="flex items-center gap-2">
+              {mode === 'view' && (
+                <button
+                  onClick={() => setMode('edit')}
+                  className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                >
+                  <Edit2 size={16} />
+                  Redaguoti
+                </button>
+              )}
+              <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
           </div>
 
           {/* Draft Prompt Banner */}
-          {showDraftPrompt && (
+          {showDraftPrompt && mode === 'edit' && (
             <div className="bg-blue-50 border-b border-blue-100 px-6 py-3 flex items-center justify-between animate-in slide-in-from-top-2">
               <div className="flex items-center gap-2 text-blue-800 text-sm">
                 <AlertTriangle size={16} />
@@ -322,8 +370,8 @@ export default function ContractForm({ onClose, onSave, initialData }: ContractF
         </div>
 
         <form onSubmit={handleSubmit} className="p-6">
-          {/* File Upload Section */}
-          {!initialData && (
+          {/* File Upload Section - Only Show when Creating New */}
+          {!initialData && mode === 'edit' && (
             <div className="mb-8 p-6 border-2 border-dashed border-blue-200 rounded-xl bg-blue-50/50 text-center">
               <div className="flex flex-col items-center gap-2">
                 <div className="p-3 bg-white rounded-full shadow-sm text-blue-600">
@@ -354,37 +402,9 @@ export default function ContractForm({ onClose, onSave, initialData }: ContractF
             <div className="space-y-4">
               <h3 className="text-sm uppercase tracking-wide text-gray-500 font-semibold border-b pb-2">Kliento informacija</h3>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Kliento vardas (Draudėjas)</label>
-                <input
-                  required
-                  type="text"
-                  value={formData.draudejas}
-                  onChange={e => setFormData({ ...formData, draudejas: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Pardavėjas (ID)</label>
-                <input
-                  required
-                  type="text"
-                  value={formData.pardavejas}
-                  onChange={e => setFormData({ ...formData, pardavejas: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Valstybinis Nr.</label>
-                <input
-                  type="text"
-                  value={formData.valstybinisNr}
-                  onChange={e => setFormData({ ...formData, valstybinisNr: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-              </div>
+              {renderField('Kliento vardas (Draudėjas)', formData.draudejas, 'text', 'draudejas', true)}
+              {renderField('Pardavėjas (ID)', formData.pardavejas, 'text', 'pardavejas', true)}
+              {renderField('Valstybinis Nr.', formData.valstybinisNr, 'text', 'valstybinisNr')}
             </div>
 
             {/* Right Column */}
@@ -392,71 +412,18 @@ export default function ContractForm({ onClose, onSave, initialData }: ContractF
               <h3 className="text-sm uppercase tracking-wide text-gray-500 font-semibold border-b pb-2">Poliso detalės</h3>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Poliso Nr.</label>
-                  <input
-                    required
-                    type="text"
-                    value={formData.policyNo}
-                    onChange={e => setFormData({ ...formData, policyNo: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tipas (Grupė)</label>
-                  <input
-                    required
-                    type="text"
-                    value={formData.ldGrupe}
-                    onChange={e => setFormData({ ...formData, ldGrupe: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                </div>
+                {renderField('Poliso Nr.', formData.policyNo, 'text', 'policyNo', true)}
+                {renderField('Tipas (Grupė)', formData.ldGrupe, 'text', 'ldGrupe', true)}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Galioja nuo</label>
-                  <input
-                    type="date"
-                    value={formData.galiojaNuo}
-                    onChange={e => setFormData({ ...formData, galiojaNuo: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Galioja iki</label>
-                  <input
-                    required
-                    type="date"
-                    value={formData.galiojaIki}
-                    onChange={e => setFormData({ ...formData, galiojaIki: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                </div>
+                {renderField('Galioja nuo', formData.galiojaNuo, 'date', 'galiojaNuo')}
+                {renderField('Galioja iki', formData.galiojaIki, 'date', 'galiojaIki', true)}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Metinė įmoka</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formData.metineIsmoka}
-                    onChange={e => setFormData({ ...formData, metineIsmoka: parseFloat(e.target.value) })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Išmokos vertė</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formData.ismoka}
-                    onChange={e => setFormData({ ...formData, ismoka: parseFloat(e.target.value) })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                </div>
+                {renderField('Metinė įmoka', formData.metineIsmoka, 'number', 'metineIsmoka')}
+                {renderField('Išmokos vertė', formData.ismoka, 'number', 'ismoka')}
               </div>
             </div>
           </div>
@@ -476,7 +443,7 @@ export default function ContractForm({ onClose, onSave, initialData }: ContractF
                 <div key={idx} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm text-sm text-gray-700 group flex items-start justify-between gap-3">
 
                   {/* Edit Mode */}
-                  {editingNoteIdx === idx ? (
+                  {editingNoteIdx === idx && mode === 'edit' ? (
                     <div className="flex-1 flex flex-col gap-2">
                       {/* Rich Text Toolbar for Edit */}
                       <div className="flex items-center gap-1 bg-gray-50 p-1.5 rounded-t-lg border border-gray-200 border-b-0">
@@ -527,89 +494,112 @@ export default function ContractForm({ onClose, onSave, initialData }: ContractF
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity self-start">
-                        <button
-                          type="button"
-                          onClick={() => startEditNote(idx, note)}
-                          className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                          title="Redaguoti pastabą"
-                        >
-                          <Edit2 size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteNote(idx)}
-                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                          title="Ištrinti pastabą"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
+                      {mode === 'edit' && (
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity self-start">
+                          <button
+                            type="button"
+                            onClick={() => startEditNote(idx, note)}
+                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                            title="Redaguoti pastabą"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteNote(idx)}
+                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                            title="Ištrinti pastabą"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
               ))}
             </div>
 
-            {/* Add New Note (Rich Editor) */}
-            <div className="border border-gray-300 rounded-lg bg-white overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-shadow">
-              {/* Toolbar */}
-              <div className="flex items-center gap-1 bg-gray-50 p-2 border-b border-gray-200">
-                <span className="text-xs text-gray-400 font-medium mr-2 px-1">FORMATAS:</span>
-                <button type="button" onClick={() => insertMarkdown('**', 'inline', noteInput, setNoteInput, inputRef)} className="p-1.5 hover:bg-gray-200 rounded text-gray-700" title="Paryškinti">
-                  <Bold size={16} />
-                </button>
-                <button type="button" onClick={() => insertMarkdown('*', 'inline', noteInput, setNoteInput, inputRef)} className="p-1.5 hover:bg-gray-200 rounded text-gray-700" title="Kursyvas">
-                  <Italic size={16} />
-                </button>
-                <div className="w-px h-4 bg-gray-300 mx-1"></div>
-                <button type="button" onClick={() => insertMarkdown('- ', 'list', noteInput, setNoteInput, inputRef)} className="p-1.5 hover:bg-gray-200 rounded text-gray-700" title="Sąrašas">
-                  <List size={16} />
-                </button>
-                <button type="button" onClick={() => insertMarkdown('> ', 'block', noteInput, setNoteInput, inputRef)} className="p-1.5 hover:bg-gray-200 rounded text-gray-700" title="Citata">
-                  <Quote size={16} />
-                </button>
-              </div>
-
-              <div className="relative">
-                <textarea
-                  ref={inputRef}
-                  value={noteInput}
-                  onChange={e => setNoteInput(e.target.value)}
-                  placeholder="Įveskite naują išsamią pastabą čia..."
-                  className="w-full p-3 outline-none min-h-[100px] text-sm resize-y font-mono"
-                />
-                <div className="absolute bottom-3 right-3">
-                  <button
-                    type="button"
-                    onClick={handleAddNote}
-                    disabled={!noteInput.trim()}
-                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white px-4 py-1.5 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
-                  >
-                    <Plus size={16} />
-                    Pridėti pastabą
+            {/* Add New Note (Rich Editor) - Only in Edit Mode */}
+            {mode === 'edit' && (
+              <div className="border border-gray-300 rounded-lg bg-white overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-shadow">
+                {/* Toolbar */}
+                <div className="flex items-center gap-1 bg-gray-50 p-2 border-b border-gray-200">
+                  <span className="text-xs text-gray-400 font-medium mr-2 px-1">FORMATAS:</span>
+                  <button type="button" onClick={() => insertMarkdown('**', 'inline', noteInput, setNoteInput, inputRef)} className="p-1.5 hover:bg-gray-200 rounded text-gray-700" title="Paryškinti">
+                    <Bold size={16} />
+                  </button>
+                  <button type="button" onClick={() => insertMarkdown('*', 'inline', noteInput, setNoteInput, inputRef)} className="p-1.5 hover:bg-gray-200 rounded text-gray-700" title="Kursyvas">
+                    <Italic size={16} />
+                  </button>
+                  <div className="w-px h-4 bg-gray-300 mx-1"></div>
+                  <button type="button" onClick={() => insertMarkdown('- ', 'list', noteInput, setNoteInput, inputRef)} className="p-1.5 hover:bg-gray-200 rounded text-gray-700" title="Sąrašas">
+                    <List size={16} />
+                  </button>
+                  <button type="button" onClick={() => insertMarkdown('> ', 'block', noteInput, setNoteInput, inputRef)} className="p-1.5 hover:bg-gray-200 rounded text-gray-700" title="Citata">
+                    <Quote size={16} />
                   </button>
                 </div>
+
+                <div className="relative">
+                  <textarea
+                    ref={inputRef}
+                    value={noteInput}
+                    onChange={e => setNoteInput(e.target.value)}
+                    placeholder="Įveskite naują išsamią pastabą čia..."
+                    className="w-full p-3 outline-none min-h-[100px] text-sm resize-y font-mono"
+                  />
+                  <div className="absolute bottom-3 right-3">
+                    <button
+                      type="button"
+                      onClick={handleAddNote}
+                      disabled={!noteInput.trim()}
+                      className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white px-4 py-1.5 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
+                    >
+                      <Plus size={16} />
+                      Pridėti pastabą
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Footer Actions */}
           <div className="mt-8 pt-4 border-t border-gray-100 flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-2.5 text-gray-700 font-medium hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              Atšaukti
-            </button>
-            <button
-              type="submit"
-              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm flex items-center gap-2 transition-colors"
-            >
-              <Save size={18} />
-              Išsaugoti sutartį
-            </button>
+            {mode === 'edit' ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    // If we were initially in view mode, revert nicely or just close? 
+                    // If we are deep editing, maybe allow Revert to View. 
+                    // But simple close is safer to avoid confusion.
+                    if (initialMode === 'view') setMode('view');
+                    else onClose();
+                  }}
+                  className="px-6 py-2.5 text-gray-700 font-medium hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  {initialMode === 'view' ? 'Atšaukti redagavimą' : 'Atšaukti'}
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm flex items-center gap-2 transition-colors"
+                >
+                  <Save size={18} />
+                  Išsaugoti sutartį
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors"
+              >
+                Uždaryti
+              </button>
+            )}
+
           </div>
         </form>
       </div>
