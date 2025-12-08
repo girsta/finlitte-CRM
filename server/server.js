@@ -561,7 +561,7 @@ app.post('/api/webhook/n8n', async (req, res) => {
   for (const item of contracts) {
     try {
       // Robust extraction
-      const policyNo = getValue(item, 'POLISO_NR') || getValue(item, 'policyNo');
+      const policyNo = getValue(item, 'Poliso Nr.') || getValue(item, 'POLISO_NR') || getValue(item, 'policyNo');
 
       if (!policyNo) {
         // Skip empty rows without policy number
@@ -569,16 +569,26 @@ app.post('/api/webhook/n8n', async (req, res) => {
       }
 
       const contract = {
-        draudejas: getValue(item, 'KLIENTAS') || getValue(item, 'draudejas') || 'Unknown',
-        pardavejas: getValue(item, 'BROKERIS') || getValue(item, 'pardavejas') || '',
-        ldGrupe: (getValue(item, 'DRAUDIMO_PRODUKTAS') || getValue(item, 'ldGrupe') || '').trim(),
+        draudejas: getValue(item, 'Draudėjo pavadinimas') || getValue(item, 'KLIENTAS') || getValue(item, 'draudejas') || 'Unknown',
+
+        pardavejas: getValue(item, 'Pardavėjas') || getValue(item, 'BROKERIS') || getValue(item, 'pardavejas') || '',
+
+        ldGrupe: (getValue(item, 'Draudimo produktas') || getValue(item, 'DRAUDIMO_PRODUKTAS') || getValue(item, 'ldGrupe') || '').trim(),
+
         policyNo: String(policyNo).trim(),
-        galiojaNuo: parseDate(getValue(item, 'POLISO_PRADZIA') || getValue(item, 'galiojaNuo')),
-        galiojaIki: parseDate(getValue(item, 'POLISO_PABAIGA') || getValue(item, 'galiojaIki')),
-        valstybinisNr: (getValue(item, 'VALSTYBINIS_NR') || getValue(item, 'valstybinisNr') || '').trim(),
-        metineIsmoka: Number(getValue(item, 'METINE_IMOKA') || getValue(item, 'metineIsmoka')) || 0,
-        ismoka: Number(getValue(item, 'ISMOKA') || getValue(item, 'ismoka')) || 0,
-        atnaujinimoData: getValue(item, 'ATNAUJINIMO_DATA') || new Date().toISOString(),
+
+        galiojaNuo: parseDate(getValue(item, 'Galioja nuo') || getValue(item, 'POLISO_PRADZIA') || getValue(item, 'galiojaNuo')),
+
+        galiojaIki: parseDate(getValue(item, 'Galioja iki') || getValue(item, 'POLISO_PABAIGA') || getValue(item, 'galiojaIki')),
+
+        valstybinisNr: (getValue(item, 'Valstybinis Nr.') || getValue(item, 'VALSTYBINIS_NR') || getValue(item, 'valstybinisNr') || '').trim(),
+
+        metineIsmoka: Number(getValue(item, 'Metinė įmoka') || getValue(item, 'METINE_IMOKA') || getValue(item, 'metineIsmoka')) || 0,
+
+        ismoka: Number(getValue(item, 'Išmokos') || getValue(item, 'ISMOKA') || getValue(item, 'ismoka')) || 0,
+
+        atnaujinimoData: getValue(item, 'Atnaujinimo data') || getValue(item, 'ATNAUJINIMO_DATA') || new Date().toISOString(),
+
         // notes handled below
         is_archived: 0
       };
