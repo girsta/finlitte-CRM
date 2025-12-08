@@ -158,7 +158,7 @@ db.serialize(() => {
     if (row.count === 0) {
       console.log("Seeding default admin user...");
       const hashedPassword = await bcrypt.hash('admin123', 10);
-      db.run("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", ['admin', hashedPassword, 'admin']);
+      db.run("INSERT INTO users (username, password, role, full_name) VALUES (?, ?, ?, ?)", ['admin', hashedPassword, 'admin', 'Daividas Girštautas']);
     }
   });
 });

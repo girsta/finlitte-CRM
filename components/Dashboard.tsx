@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Contract, User, ExpiryStatus } from '../types';
 import { Menu, Plus, Search, AlertTriangle, CheckCircle, XCircle, Archive, LayoutList, Download, History, Filter, Upload } from 'lucide-react';
 import Papa from 'papaparse';
+import * as XLSX from 'xlsx';
 import ContractList from './ContractList';
 import ContractForm from './ContractForm';
 import HistoryModal from './HistoryModal';
@@ -148,42 +149,59 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     }
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: async (results) => {
-        setIsLoading(true);
-        try {
-          const res = await fetch('/api/webhook/n8n', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(results.data),
-          });
+    setIsLoading(true);
 
-          if (res.ok) {
-            const responseData = await res.json();
-            alert(`Įkelta sėkmingai: ${responseData.success}, Nepavyko: ${responseData.failed}`);
-            fetchContracts();
-          } else {
-            alert("Klaida įkeliant duomenis");
-          }
-        } catch (e) {
-          console.error("Upload failed", e);
-          alert("Klaida įkeliant duomenis");
-        } finally {
-          setIsLoading(false);
-          if (fileInputRef.current) fileInputRef.current.value = '';
-        }
-      },
-      error: (error: Error) => {
-        console.error("CSV Parse error", error);
-        alert("Nepavyko nuskaityti failo");
+    try {
+      let data: any[] = [];
+
+      if (file.name.endsWith('.csv')) {
+        // Handle CSV
+        await new Promise<void>((resolve, reject) => {
+          Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: (results) => {
+              data = results.data;
+              resolve();
+            },
+            error: (err) => reject(err)
+          });
+        });
+      } else {
+        // Handle Excel
+        const arrayBuffer = await file.arrayBuffer();
+        const workbook = XLSX.read(arrayBuffer);
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        data = XLSX.utils.sheet_to_json(worksheet);
       }
-    });
+
+      // Upload Data
+      const res = await fetch('/api/webhook/n8n', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (res.ok) {
+        const responseData = await res.json();
+        alert(`Įkelta sėkmingai: ${responseData.success}, Nepavyko: ${responseData.failed}`);
+        fetchContracts();
+      } else {
+        alert("Klaida įkeliant duomenis");
+      }
+
+    } catch (e) {
+      console.error("Upload/Parse failed", e);
+      alert("Klaida nuskaitant arba įkeliant failą");
+    } finally {
+      setIsLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const getStatus = (dateStr: string): ExpiryStatus => {
@@ -417,7 +435,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                   <input
                     type="file"
-                    accept=".csv"
+                    accept=".csv, .xlsx, .xls"
                     ref={fileInputRef}
                     onChange={handleFileUpload}
                     className="hidden"
