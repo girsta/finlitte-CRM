@@ -1,0 +1,26 @@
+[
+    {
+        "atnaujinimo_data": "2025-12-01",
+        "klientas": "TEST_CASE_INSENSITIVE",
+        "brokeris": "Test Broker",
+        "draudimo_produktas": "Test Product",
+        "poliso_nr": "TEST_POLICY_100",
+        "poliso_pradzia": "2025-12-01",
+        "poliso_pabaiga": "2026-12-01",
+        "valstybinis_nr": "TEST001",
+        "metine_imoka": "100.00",
+        "ismoka": "0"
+    },
+    {
+        "ATNAUJINIMO_DATA": "2025-12-02",
+        "KLIENTAS": "TEST_SERIAL_DATE",
+        "BROKERIS": "Test Broker 2",
+        "DRAUDIMO_PRODUKTAS": "Test Product 2",
+        "POLISO_NR": "TEST_POLICY_101",
+        "POLISO_PRADZIA": "45992",
+        "POLISO_PABAIGA": "46357",
+        "VALSTYBINIS_NR": "TEST002",
+        "METINE_IMOKA": "200.00",
+        "ISMOKA": "0"
+    }
+]

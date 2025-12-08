@@ -516,6 +516,130 @@ app.delete('/api/tasks/:id', isAuthenticated, hasRole(['admin']), (req, res) => 
   });
 });
 
+// --- Webhook for n8n ---
+// --- Webhook for n8n ---
+app.post('/api/webhook/n8n', async (req, res) => {
+  const data = req.body;
+  console.log("Received n8n webhook data:", JSON.stringify(data).substring(0, 200) + "...");
+
+  // Ensure data is an array
+  const contracts = Array.isArray(data) ? data : [data];
+
+  const results = {
+    success: 0,
+    failed: 0,
+    errors: []
+  };
+
+  // Helper to convert Excel serial date to ISO string (YYYY-MM-DD)
+  // Also handles standard date strings if passed instead of serials
+  const parseDate = (input) => {
+    if (!input) return new Date().toISOString().split('T')[0];
+
+    // If it's a number (Excel Serial)
+    const serial = Number(input);
+    if (!isNaN(serial) && serial > 20000) { // check > 20000 to avoid confusing small numbers with dates (Excel 30000 is ~1982)
+      const date = new Date(Math.round((serial - 25569) * 86400 * 1000));
+      return date.toISOString().split('T')[0];
+    }
+
+    // Try parsing as standard date string
+    const date = new Date(input);
+    if (!isNaN(date.getTime())) {
+      return date.toISOString().split('T')[0];
+    }
+
+    return new Date().toISOString().split('T')[0]; // Fallback
+  };
+
+  // Helper to get value from object case-insensitively
+  const getValue = (obj, key) => {
+    const foundKey = Object.keys(obj).find(k => k.toLowerCase() === key.toLowerCase());
+    return foundKey ? obj[foundKey] : undefined;
+  };
+
+  for (const item of contracts) {
+    try {
+      // Robust extraction
+      const policyNo = getValue(item, 'POLISO_NR') || getValue(item, 'policyNo');
+
+      if (!policyNo) {
+        // Skip empty rows without policy number
+        continue;
+      }
+
+      const contract = {
+        draudejas: getValue(item, 'KLIENTAS') || getValue(item, 'draudejas') || 'Unknown',
+        pardavejas: getValue(item, 'BROKERIS') || getValue(item, 'pardavejas') || '',
+        ldGrupe: (getValue(item, 'DRAUDIMO_PRODUKTAS') || getValue(item, 'ldGrupe') || '').trim(),
+        policyNo: String(policyNo).trim(),
+        galiojaNuo: parseDate(getValue(item, 'POLISO_PRADZIA') || getValue(item, 'galiojaNuo')),
+        galiojaIki: parseDate(getValue(item, 'POLISO_PABAIGA') || getValue(item, 'galiojaIki')),
+        valstybinisNr: (getValue(item, 'VALSTYBINIS_NR') || getValue(item, 'valstybinisNr') || '').trim(),
+        metineIsmoka: Number(getValue(item, 'METINE_IMOKA') || getValue(item, 'metineIsmoka')) || 0,
+        ismoka: Number(getValue(item, 'ISMOKA') || getValue(item, 'ismoka')) || 0,
+        atnaujinimoData: getValue(item, 'ATNAUJINIMO_DATA') || new Date().toISOString(),
+        // notes handled below
+        is_archived: 0
+      };
+
+      // Check if contract with this policyNo already exists
+      const existing = await new Promise((resolve, reject) => {
+        db.get('SELECT id, notes FROM contracts WHERE policyNo = ?', [contract.policyNo], (err, row) => {
+          if (err) reject(err);
+          else resolve(row);
+        });
+      });
+
+      if (existing) {
+        // Update existing contract
+        await new Promise((resolve, reject) => {
+          const sql = `UPDATE contracts SET 
+            draudejas = ?, pardavejas = ?, ldGrupe = ?, 
+            galiojaNuo = ?, galiojaIki = ?, valstybinisNr = ?, 
+            metineIsmoka = ?, ismoka = ?, atnaujinimoData = ?
+            WHERE id = ?`;
+          const params = [
+            contract.draudejas, contract.pardavejas, contract.ldGrupe,
+            contract.galiojaNuo, contract.galiojaIki, contract.valstybinisNr,
+            contract.metineIsmoka, contract.ismoka, contract.atnaujinimoData,
+            existing.id
+          ];
+          db.run(sql, params, (err) => {
+            if (err) reject(err);
+            else resolve();
+          });
+        });
+      } else {
+        // Insert new contract
+        await new Promise((resolve, reject) => {
+          const sql = `INSERT INTO contracts (
+            draudejas, pardavejas, ldGrupe, policyNo, 
+            galiojaNuo, galiojaIki, valstybinisNr, 
+            metineIsmoka, ismoka, notes, atnaujinimoData, is_archived
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`;
+          const params = [
+            contract.draudejas, contract.pardavejas, contract.ldGrupe, contract.policyNo,
+            contract.galiojaNuo, contract.galiojaIki, contract.valstybinisNr,
+            contract.metineIsmoka, contract.ismoka, '[]', contract.atnaujinimoData
+          ];
+          db.run(sql, params, (err) => {
+            if (err) reject(err);
+            else resolve();
+          });
+        });
+      }
+      results.success++;
+    } catch (e) {
+      console.error("Error processing item:", item, e);
+      results.failed++;
+      results.errors.push(e.message);
+    }
+  }
+
+  res.json(results);
+});
+
 // --- Static File Serving (VPS Optimized) ---
 if (process.env.NODE_ENV === 'production') {
   const distPath = path.join(__dirname, '../dist');

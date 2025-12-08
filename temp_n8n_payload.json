@@ -1,0 +1,26 @@
+[
+    {
+        "ATNAUJINIMO_DATA": "2025-11-01",
+        "KLIENTAS": "ARMINDAS",
+        "BROKERIS": "Tadas Mulerenka",
+        "DRAUDIMO_PRODUKTAS": "LD04 - Komercinė transporto CA",
+        "POLISO_NR": "1195241852",
+        "POLISO_PRADZIA": "45778",
+        "POLISO_PABAIGA": "45961",
+        "VALSTYBINIS_NR": "LJU006",
+        "METINE_IMOKA": "1209.86",
+        "ISMOKA": "0"
+    },
+    {
+        "ATNAUJINIMO_DATA": "2025-11-02",
+        "KLIENTAS": "ARMINDAS1",
+        "BROKERIS": "Tadas Mulerenka1",
+        "DRAUDIMO_PRODUKTAS": "LD04 - Komercinė transporto CA1",
+        "POLISO_NR": "11952418521",
+        "POLISO_PRADZIA": "45779",
+        "POLISO_PABAIGA": "45962",
+        "VALSTYBINIS_NR": "LJU007",
+        "METINE_IMOKA": "1209.861",
+        "ISMOKA": "1"
+    }
+]
