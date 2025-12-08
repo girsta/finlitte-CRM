@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Contract, User, ExpiryStatus } from '../types';
-import { Menu, Plus, Search, AlertTriangle, CheckCircle, XCircle, Archive, LayoutList, Download, History, Filter } from 'lucide-react';
+import { Menu, Plus, Search, AlertTriangle, CheckCircle, XCircle, Archive, LayoutList, Download, History, Filter, Upload } from 'lucide-react';
+import Papa from 'papaparse';
 import ContractList from './ContractList';
 import ContractForm from './ContractForm';
 import HistoryModal from './HistoryModal';
@@ -36,6 +37,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [notesContract, setNotesContract] = useState<Contract | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Toggle between Active and Archived views within the Dashboard tab
   const [viewArchived, setViewArchived] = useState(false);
@@ -144,6 +146,44 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     } catch (e) {
       console.error("Archive toggle failed", e);
     }
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: async (results) => {
+        setIsLoading(true);
+        try {
+          const res = await fetch('/api/webhook/n8n', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(results.data),
+          });
+
+          if (res.ok) {
+            const responseData = await res.json();
+            alert(`Įkelta sėkmingai: ${responseData.success}, Nepavyko: ${responseData.failed}`);
+            fetchContracts();
+          } else {
+            alert("Klaida įkeliant duomenis");
+          }
+        } catch (e) {
+          console.error("Upload failed", e);
+          alert("Klaida įkeliant duomenis");
+        } finally {
+          setIsLoading(false);
+          if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+      },
+      error: (error: Error) => {
+        console.error("CSV Parse error", error);
+        alert("Nepavyko nuskaityti failo");
+      }
+    });
   };
 
   const getStatus = (dateStr: string): ExpiryStatus => {
@@ -374,13 +414,29 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
               </div>
 
               {canCreate && !viewArchived && (
-                <button
-                  onClick={() => { setEditingContract(undefined); setIsFormOpen(true); }}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors shadow-sm"
-                >
-                  <Plus size={20} />
-                  Nauja sutartis
-                </button>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <input
+                    type="file"
+                    accept=".csv"
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-2.5 rounded-lg font-medium transition-colors shadow-sm"
+                  >
+                    <Upload size={20} />
+                    Įkelti sutartį
+                  </button>
+                  <button
+                    onClick={() => { setEditingContract(undefined); setIsFormOpen(true); }}
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors shadow-sm"
+                  >
+                    <Plus size={20} />
+                    Nauja sutartis
+                  </button>
+                </div>
               )}
             </div>
 
