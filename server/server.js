@@ -560,38 +560,52 @@ app.post('/api/webhook/n8n', async (req, res) => {
 
   for (const item of contracts) {
     try {
-      // Robust extraction
-      const policyNo = getValue(item, 'Poliso Nr.') || getValue(item, 'POLISO_NR') || getValue(item, 'policyNo');
+      // --- NEW MAPPING CODE START ---
+
+      // 1. Try to find Policy Number using multiple common Lithuanian variations
+      const policyNo = getValue(item, 'Poliso Nr.') ||
+        getValue(item, 'Poliso Nr') ||
+        getValue(item, 'POLISO_NR') ||
+        getValue(item, 'policyNo');
 
       if (!policyNo) {
-        // Skip empty rows without policy number
+        // Skip empty rows
         continue;
       }
 
       const contract = {
+        // Look for "Draudėjo pavadinimas" OR "Klientas" OR "draudejas"
         draudejas: getValue(item, 'Draudėjo pavadinimas') || getValue(item, 'KLIENTAS') || getValue(item, 'draudejas') || 'Unknown',
 
-        pardavejas: getValue(item, 'Pardavėjas') || getValue(item, 'BROKERIS') || getValue(item, 'pardavejas') || '',
+        // Look for "Kuratorius" OR "Brokeris" OR "Pardavejas"
+        pardavejas: getValue(item, 'Kuratorius') || getValue(item, 'BROKERIS') || getValue(item, 'pardavejas') || '',
 
-        ldGrupe: (getValue(item, 'Draudimo produktas') || getValue(item, 'DRAUDIMO_PRODUKTAS') || getValue(item, 'ldGrupe') || '').trim(),
+        // Look for "Draudimo rūšis" OR "Draudimo produktas"
+        ldGrupe: (getValue(item, 'Draudimo rūšis') || getValue(item, 'Draudimo produktas') || getValue(item, 'DRAUDIMO_PRODUKTAS') || getValue(item, 'ldGrupe') || '').trim(),
 
         policyNo: String(policyNo).trim(),
 
+        // Look for "Galioja nuo"
         galiojaNuo: parseDate(getValue(item, 'Galioja nuo') || getValue(item, 'POLISO_PRADZIA') || getValue(item, 'galiojaNuo')),
 
+        // Look for "Galioja iki"
         galiojaIki: parseDate(getValue(item, 'Galioja iki') || getValue(item, 'POLISO_PABAIGA') || getValue(item, 'galiojaIki')),
 
-        valstybinisNr: (getValue(item, 'Valstybinis Nr.') || getValue(item, 'VALSTYBINIS_NR') || getValue(item, 'valstybinisNr') || '').trim(),
+        // Look for "Valstybinis Nr."
+        valstybinisNr: (getValue(item, 'Valstybinis Nr.') || getValue(item, 'Valstybinis Nr') || getValue(item, 'VALSTYBINIS_NR') || getValue(item, 'valstybinisNr') || '').trim(),
 
-        metineIsmoka: Number(getValue(item, 'Metinė įmoka') || getValue(item, 'METINE_IMOKA') || getValue(item, 'metineIsmoka')) || 0,
+        // Look for "Metinė įmoka" or "Pasirašyta įmoka"
+        metineIsmoka: Number(getValue(item, 'Metinė įmoka') || getValue(item, 'Pasirašyta įmoka') || getValue(item, 'METINE_IMOKA') || getValue(item, 'metineIsmoka')) || 0,
 
-        ismoka: Number(getValue(item, 'Išmokos') || getValue(item, 'ISMOKA') || getValue(item, 'ismoka')) || 0,
+        // Look for "Draudimo suma"
+        ismoka: Number(getValue(item, 'Draudimo suma') || getValue(item, 'ISMOKA') || getValue(item, 'ismoka')) || 0,
 
-        atnaujinimoData: getValue(item, 'Atnaujinimo data') || getValue(item, 'ATNAUJINIMO_DATA') || new Date().toISOString(),
+        // Look for specific typo from your logs "Atnaujini-mo data"
+        atnaujinimoData: getValue(item, 'Atnaujini-mo data') || getValue(item, 'Atnaujinimo data') || getValue(item, 'ATNAUJINIMO_DATA') || new Date().toISOString(),
 
-        // notes handled below
         is_archived: 0
       };
+      // --- NEW MAPPING CODE END ---
 
       // Check if contract with this policyNo already exists
       const existing = await new Promise((resolve, reject) => {
