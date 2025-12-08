@@ -435,7 +435,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                   <input
                     type="file"
-                    accept=".csv, .xlsx, .xls"
+                    accept=".csv, .xlsx, .xls, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
                     ref={fileInputRef}
                     onChange={handleFileUpload}
                     className="hidden"
