@@ -381,7 +381,7 @@ export default function ContractForm({ onClose, onSave, initialData, initialMode
 
               {renderField('Kliento vardas (Draudėjas)', formData.draudejas, 'text', 'draudejas', true)}
               {renderField('Pardavėjas (ID)', formData.pardavejas, 'text', 'pardavejas', true)}
-              {renderField('Objektas / Reg. Nr.', formData.valstybinisNr, 'text', 'valstybinisNr')}
+              {renderField('Valstybinis Nr.', formData.valstybinisNr, 'text', 'valstybinisNr')}
             </div>
 
             {/* Right Column */}
@@ -390,7 +390,7 @@ export default function ContractForm({ onClose, onSave, initialData, initialMode
 
               <div className="grid grid-cols-2 gap-4">
                 {renderField('Poliso Nr.', formData.policyNo, 'text', 'policyNo', true)}
-                {renderField('Tipas (Grupė)', formData.ldGrupe, 'text', 'ldGrupe', true)}
+                {renderField('LD grupės pavadinimas', formData.ldGrupe, 'text', 'ldGrupe', true)}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -403,9 +403,7 @@ export default function ContractForm({ onClose, onSave, initialData, initialMode
                 {renderField('Išmokos vertė', formData.ismoka, 'number', 'ismoka')}
               </div>
 
-              <div className="grid grid-cols-1 gap-4">
-                {renderField('Atnaujinimo data', formData.atnaujinimoData || '', 'date', 'atnaujinimoData')}
-              </div>
+
             </div>
           </div>
 
