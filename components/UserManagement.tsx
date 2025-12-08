@@ -143,7 +143,7 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
 
             <form onSubmit={handleSaveUser} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Vartotojo vardas</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Prisijungimo vardas</label>
                 <input
                   type="text"
                   required
@@ -207,7 +207,7 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
                 ) : users.map(u => (
                   <tr key={u.id} className={`hover:bg-gray-50 transition-colors ${editingUser?.id === u.id ? 'bg-blue-50' : ''}`}>
                     <td className="px-6 py-4">
-                      <div className="font-medium text-gray-900">{u.full_name || "NENUSTATYTA"}</div>
+                      <div className="font-medium text-gray-900">{u.full_name || <span className="text-red-500 text-xs">NENUSTATYTA</span>}</div>
                       <div className="text-xs text-gray-400">@{u.username}</div>
                     </td>
                     <td className="px-6 py-4">

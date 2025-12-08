@@ -290,7 +290,7 @@ export default function ContractForm({ onClose, onSave, initialData, initialMode
         <div>
           <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 opacity-70">{label}</label>
           <div className="text-gray-900 font-medium text-base py-1 border-b border-gray-100 min-h-[1.5em]">
-            {value || '-'}
+            {value}
           </div>
         </div>
       );
@@ -370,32 +370,7 @@ export default function ContractForm({ onClose, onSave, initialData, initialMode
         </div>
 
         <form onSubmit={handleSubmit} className="p-6">
-          {/* File Upload Section - Only Show when Creating New */}
-          {!initialData && mode === 'edit' && (
-            <div className="mb-8 p-6 border-2 border-dashed border-blue-200 rounded-xl bg-blue-50/50 text-center">
-              <div className="flex flex-col items-center gap-2">
-                <div className="p-3 bg-white rounded-full shadow-sm text-blue-600">
-                  <Upload size={24} />
-                </div>
-                <h3 className="font-semibold text-blue-900">Automatinis pildymas iš dokumento</h3>
-                <p className="text-sm text-blue-600/80 mb-2">Įkelkite poliso CSV/PDF failą automatiniam laukų užpildymui</p>
-                <input
-                  type="file"
-                  onChange={handleFileUpload}
-                  disabled={isUploading}
-                  className="block w-full text-sm text-slate-500
-                    file:mr-4 file:py-2 file:px-4
-                    file:rounded-full file:border-0
-                    file:text-sm file:font-semibold
-                    file:bg-blue-600 file:text-white
-                    hover:file:bg-blue-700
-                    cursor-pointer max-w-xs mx-auto
-                  "
-                />
-                {isUploading && <p className="text-xs text-blue-600 animate-pulse">Apdorojamas dokumentas...</p>}
-              </div>
-            </div>
-          )}
+
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Left Column */}

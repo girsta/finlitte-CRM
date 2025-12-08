@@ -238,26 +238,34 @@ app.post('/api/contracts', isAuthenticated, hasRole(['admin', 'sales']), (req, r
     });
 
   } else {
-    const sql = `INSERT INTO contracts (
-      draudejas, pardavejas, ldGrupe, policyNo, 
-      galiojaNuo, galiojaIki, valstybinisNr, 
-      metineIsmoka, ismoka, notes, atnaujinimoData, is_archived
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`;
-
-    const params = [
-      c.draudejas, c.pardavejas, c.ldGrupe, c.policyNo,
-      c.galiojaNuo, c.galiojaIki, c.valstybinisNr,
-      c.metineIsmoka, c.ismoka, notesStr, new Date().toISOString()
-    ];
-
-    db.run(sql, params, function (err) {
+    // Check for duplicates before creating
+    db.get('SELECT id FROM contracts WHERE policyNo = ? AND valstybinisNr = ?', [c.policyNo, c.valstybinisNr], (err, row) => {
       if (err) return res.status(500).json({ error: err.message });
-      const newId = this.lastID;
-      logHistory(newId, userId, username, 'CREATED', 'Contract created');
-      res.json({ message: 'Created', id: newId });
+      if (row) {
+        return res.status(409).json({ error: 'Sutartis su tokiu poliso numeriu ir objektu jau egzistuoja.' });
+      }
+
+      const sql = `INSERT INTO contracts (
+        draudejas, pardavejas, ldGrupe, policyNo, 
+        galiojaNuo, galiojaIki, valstybinisNr, 
+        metineIsmoka, ismoka, notes, atnaujinimoData, is_archived
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`;
+
+      const params = [
+        c.draudejas, c.pardavejas, c.ldGrupe, c.policyNo,
+        c.galiojaNuo, c.galiojaIki, c.valstybinisNr,
+        c.metineIsmoka, c.ismoka, notesStr, new Date().toISOString()
+      ];
+
+      db.run(sql, params, function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        logHistory(this.lastID, userId, username, 'CREATED', 'Contract created');
+        res.json({ message: 'Created', id: this.lastID });
+      });
     });
   }
 });
+
 
 // Toggle Archive Status
 app.post('/api/contracts/:id/archive', isAuthenticated, hasRole(['admin', 'sales']), (req, res) => {
@@ -297,8 +305,8 @@ app.delete('/api/contracts/:id', isAuthenticated, hasRole(['admin']), (req, res)
 });
 
 // --- User Management API ---
-app.get('/api/users', isAuthenticated, hasRole(['admin']), (req, res) => {
-  db.all('SELECT id, username, role FROM users', [], (err, rows) => {
+app.get('/api/users', isAuthenticated, (req, res) => {
+  db.all('SELECT id, username, role, full_name, phone, email FROM users', [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
   });
@@ -492,22 +500,28 @@ app.post('/api/tasks/:id/comments', isAuthenticated, (req, res) => {
       return res.status(403).json({ error: 'Not authorized to comment on this task' });
     }
 
-    const comments = task.comments ? JSON.parse(task.comments) : [];
-    const newComment = {
-      id: Date.now(),
-      text,
-      author: username,
-      timestamp: new Date().toISOString()
-    };
+    // Fetch user to get full name
+    db.get('SELECT full_name FROM users WHERE id = ?', [req.session.userId], (err, user) => {
+      const authorName = (user && user.full_name) ? user.full_name : username;
 
-    comments.push(newComment);
+      const comments = task.comments ? JSON.parse(task.comments) : [];
+      const newComment = {
+        id: Date.now(),
+        text,
+        author: authorName,
+        timestamp: new Date().toISOString()
+      };
 
-    db.run('UPDATE tasks SET comments = ? WHERE id = ?', [JSON.stringify(comments), taskId], function (err) {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ message: 'Comment added', comment: newComment });
+      // ... rest of logic
+      comments.push(newComment);
+      db.run('UPDATE tasks SET comments = ? WHERE id = ?', [JSON.stringify(comments), taskId], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: 'Comment added', comment: newComment });
+      });
     });
   });
 });
+
 
 app.delete('/api/tasks/:id', isAuthenticated, hasRole(['admin']), (req, res) => {
   db.run("DELETE FROM tasks WHERE id = ?", [req.params.id], function (err) {

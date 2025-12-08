@@ -9,6 +9,7 @@ interface TaskManagerProps {
 interface DBUser {
   id: number;
   username: string;
+  full_name?: string;
   role: string;
 }
 
@@ -31,9 +32,7 @@ export default function TaskManager({ currentUser }: TaskManagerProps) {
 
   useEffect(() => {
     fetchTasks();
-    if (currentUser.role === 'admin') {
-      fetchUsers();
-    }
+    fetchUsers(); // Fetch users for all roles to resolve names in comments
   }, [currentUser]);
 
   const fetchTasks = async () => {
@@ -275,7 +274,12 @@ export default function TaskManager({ currentUser }: TaskManagerProps) {
                             task.comments.map(comment => (
                               <div key={comment.id} className="bg-gray-50 p-3 rounded-lg text-sm">
                                 <div className="flex justify-between items-center mb-1">
-                                  <span className="font-semibold text-gray-700">{comment.author}</span>
+                                  <span className="font-semibold text-gray-700">
+                                    {(() => {
+                                      const u = users.find(user => user.username === comment.author);
+                                      return u?.full_name || comment.author;
+                                    })()}
+                                  </span>
                                   <span className="text-xs text-gray-400">{new Date(comment.timestamp).toLocaleString()}</span>
                                 </div>
                                 <p className="text-gray-600">{comment.text}</p>
