@@ -19,6 +19,7 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
 
   // Form State
   const [newUsername, setNewUsername] = useState('');
+  const [newFullName, setNewFullName] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newRole, setNewRole] = useState<'admin' | 'sales' | 'viewer'>('viewer');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -55,6 +56,7 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           username: newUsername,
+          full_name: newFullName,
           password: newPassword, // Can be empty if editing and keeping old password
           role: newRole
         })
@@ -78,6 +80,7 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
 
   const resetForm = () => {
     setNewUsername('');
+    setNewFullName('');
     setNewPassword('');
     setNewRole('viewer');
     setEditingUser(null);
@@ -86,6 +89,7 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
   const handleEditClick = (user: DBUser) => {
     setEditingUser(user);
     setNewUsername(user.username);
+    setNewFullName(user.full_name || '');
     setNewRole(user.role);
     setNewPassword(''); // Don't populate password for security
   };
@@ -149,6 +153,16 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
                   required
                   value={newUsername}
                   onChange={e => setNewUsername(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Pilnas vardas</label>
+                <input
+                  type="text"
+                  value={newFullName}
+                  onChange={e => setNewFullName(e.target.value)}
+                  placeholder="Vardenis Pavardenis"
                   className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 />
               </div>

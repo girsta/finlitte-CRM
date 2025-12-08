@@ -313,12 +313,12 @@ app.get('/api/users', isAuthenticated, (req, res) => {
 });
 
 app.post('/api/users', isAuthenticated, hasRole(['admin']), async (req, res) => {
-  const { username, password, role } = req.body;
+  const { username, password, role, full_name } = req.body;
   if (!username || !password) return res.status(400).json({ error: 'Missing fields' });
 
   try {
     const hash = await bcrypt.hash(password, 10);
-    db.run("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", [username, hash, role || 'viewer'], function (err) {
+    db.run("INSERT INTO users (username, password, role, full_name) VALUES (?, ?, ?, ?)", [username, hash, role || 'viewer', full_name || null], function (err) {
       if (err) return res.status(400).json({ error: 'Username likely exists' });
       res.json({ message: 'User created' });
     });
@@ -330,7 +330,7 @@ app.post('/api/users', isAuthenticated, hasRole(['admin']), async (req, res) => 
 // Update User
 app.put('/api/users/:id', isAuthenticated, hasRole(['admin']), async (req, res) => {
   const userId = req.params.id;
-  const { username, password, role } = req.body;
+  const { username, password, role, full_name } = req.body;
 
   if (!username || !role) return res.status(400).json({ error: 'Missing fields' });
 
@@ -343,13 +343,13 @@ app.put('/api/users/:id', isAuthenticated, hasRole(['admin']), async (req, res) 
       if (password && password.trim() !== "") {
         // Update with new password
         const hash = await bcrypt.hash(password, 10);
-        db.run("UPDATE users SET username = ?, password = ?, role = ? WHERE id = ?", [username, hash, role, userId], function (err) {
+        db.run("UPDATE users SET username = ?, password = ?, role = ?, full_name = ? WHERE id = ?", [username, hash, role, full_name, userId], function (err) {
           if (err) return res.status(500).json({ error: err.message });
           res.json({ message: 'User updated' });
         });
       } else {
         // Update without changing password
-        db.run("UPDATE users SET username = ?, role = ? WHERE id = ?", [username, role, userId], function (err) {
+        db.run("UPDATE users SET username = ?, role = ?, full_name = ? WHERE id = ?", [username, role, full_name, userId], function (err) {
           if (err) return res.status(500).json({ error: err.message });
           res.json({ message: 'User updated' });
         });
@@ -615,18 +615,21 @@ app.post('/api/webhook/n8n', async (req, res) => {
         ismoka: Number(getValue(item, 'Draudimo suma') || getValue(item, 'ISMOKA') || getValue(item, 'ismoka')) || 0,
 
         // Look for specific typo from your logs "Atnaujini-mo data"
-        atnaujinimoData: getValue(item, 'Atnaujini-mo data') || getValue(item, 'Atnaujinimo data') || getValue(item, 'ATNAUJINIMO_DATA') || new Date().toISOString(),
+        atnaujinimoData: parseDate(getValue(item, 'Atnaujini-mo data') || getValue(item, 'Atnaujinimo data') || getValue(item, 'ATNAUJINIMO_DATA')),
 
         is_archived: 0
       };
       // --- NEW MAPPING CODE END ---
 
-      // Check if contract with this policyNo already exists
+      // Check if contract with this policyNo AND valstybinisNr already exists
       const existing = await new Promise((resolve, reject) => {
-        db.get('SELECT id, notes FROM contracts WHERE policyNo = ?', [contract.policyNo], (err, row) => {
-          if (err) reject(err);
-          else resolve(row);
-        });
+        db.get('SELECT id, notes FROM contracts WHERE policyNo = ? AND valstybinisNr = ?',
+          [contract.policyNo, contract.valstybinisNr],
+          (err, row) => {
+            if (err) reject(err);
+            else resolve(row);
+          }
+        );
       });
 
       if (existing) {
