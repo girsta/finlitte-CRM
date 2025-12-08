@@ -68,7 +68,7 @@ export default function Sidebar({ user, activeView, setActiveView, onLogout, isO
             </div>
             <div className="overflow-hidden">
               <p className="font-semibold text-gray-900 truncate text-sm" title={user.full_name || user.username}>
-                {user.full_name || "NUSISTATYKITE SAVO VARDA PAVARDE"}
+                {user.full_name ? user.full_name : <span className="text-red-500 text-xs">NENUSTATYTA</span>}
               </p>
               <div className="flex items-center gap-1">
                 <div className={`w-2 h-2 rounded-full ${user.role === 'admin' ? 'bg-purple-500' : 'bg-green-500'}`}></div>

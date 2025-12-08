@@ -44,6 +44,11 @@ export default function App() {
     setUser(null);
   };
 
+  const handleUserUpdate = (u: User) => {
+    localStorage.setItem('finlitte_user', JSON.stringify(u));
+    setUser(u);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -64,7 +69,7 @@ export default function App() {
       {!user ? (
         <Login onLogin={handleLogin} setServerError={setServerError} />
       ) : (
-        <Dashboard user={user} onLogout={handleLogout} />
+        <Dashboard user={user} onLogout={handleLogout} onUserUpdate={handleUserUpdate} />
       )}
     </div>
   );

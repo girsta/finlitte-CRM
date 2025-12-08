@@ -404,7 +404,7 @@ export default function ContractForm({ onClose, onSave, initialData, initialMode
 
               {renderField('Kliento vardas (Draudėjas)', formData.draudejas, 'text', 'draudejas', true)}
               {renderField('Pardavėjas (ID)', formData.pardavejas, 'text', 'pardavejas', true)}
-              {renderField('Valstybinis Nr.', formData.valstybinisNr, 'text', 'valstybinisNr')}
+              {renderField('Objektas / Reg. Nr.', formData.valstybinisNr, 'text', 'valstybinisNr')}
             </div>
 
             {/* Right Column */}

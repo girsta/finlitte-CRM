@@ -16,9 +16,10 @@ import TaskManager from './TaskManager';
 interface DashboardProps {
   user: User;
   onLogout: () => void;
+  onUserUpdate: (user: User) => void;
 }
 
-export default function Dashboard({ user, onLogout }: DashboardProps) {
+export default function Dashboard({ user, onLogout, onUserUpdate }: DashboardProps) {
   // Navigation State
   const [activeView, setActiveView] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -312,7 +313,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         return <TaskManager currentUser={user} />;
 
       case 'settings':
-        return <SettingsView />;
+        return <SettingsView onUserUpdate={onUserUpdate} />;
 
       case 'dashboard':
       default:
@@ -376,7 +377,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
                   <input
                     type="text"
-                    placeholder="Ieškoti pagal klientą, polisą ar reg. nr..."
+                    placeholder="Ieškoti pagal klientą, polisą ar objektą..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     onKeyDown={(e) => {

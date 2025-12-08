@@ -2,7 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Settings, Save, User, Lock, Phone, Mail, Shield, Server, Bell } from 'lucide-react';
 import { User as UserType } from '../types';
 
-export default function SettingsView() {
+interface SettingsViewProps {
+  onUserUpdate?: (user: UserType) => void;
+}
+
+export default function SettingsView({ onUserUpdate }: SettingsViewProps) {
   const [profile, setProfile] = useState<UserType | null>(null);
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(true);
@@ -49,6 +53,10 @@ export default function SettingsView() {
       if (res.ok) {
         setMessage({ type: 'success', text: 'Profilis sėkmingai atnaujintas' });
         setPassword(''); // Clear password field
+        // Notify parent to update global state
+        if (onUserUpdate) {
+          onUserUpdate(profile);
+        }
       } else {
         const err = await res.json();
         setMessage({ type: 'error', text: err.error || 'Nepavyko atnaujinti profilio' });

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Contract, ExpiryStatus, User } from '../types';
-import { Edit2, Trash2, FileText, Calendar, DollarSign, Car, Archive, RefreshCw, StickyNote, Clock } from 'lucide-react';
+import { Edit2, Trash2, FileText, Calendar, DollarSign, Box, Archive, RefreshCw, StickyNote, Clock } from 'lucide-react';
 
 interface ContractListProps {
   user: User;
@@ -74,7 +74,7 @@ export default function ContractList({ user, contracts, onEdit, onDelete, onArch
                 <td className="px-6 py-4">
                   <div className="font-mono text-gray-900">{contract.policyNo}</div>
                   <div className="flex items-center gap-1 text-gray-500 text-xs mt-1">
-                    <Car size={12} />
+                    <Box size={12} />
                     {contract.valstybinisNr}
                   </div>
                 </td>
