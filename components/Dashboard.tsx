@@ -282,10 +282,13 @@ export default function Dashboard({ user, onLogout, onUserUpdate }: DashboardPro
     let viewMatches = true;
 
     if (!viewArchived) {
-      // Active Tab: Include Valid and Warning
-      viewMatches = status !== ExpiryStatus.EXPIRED;
+      // Active Tab: Include Valid and Warning AND Not Manually Archived
+      // We hide manually archived active contracts to respect the archive action.
+      viewMatches = status !== ExpiryStatus.EXPIRED && !c.is_archived;
     } else {
       // Ended Tab: Include Expired
+      // We show ALL expired contracts, even if they were marked as archived (manually or by previous system), 
+      // so the user sees all history.
       viewMatches = status === ExpiryStatus.EXPIRED;
     }
 

@@ -145,8 +145,8 @@ app.get('/api/contracts', isAuthenticated, (req, res) => {
   db.run("DELETE FROM contracts WHERE galiojaIki < ?", [cleanupDate], (delErr) => {
     if (delErr) console.error("Auto-delete expired contracts error:", delErr);
 
-    // Fetch ALL non-archived contracts (both active and expired)
-    db.all('SELECT * FROM contracts WHERE is_archived = 0 ORDER BY galiojaIki ASC', [], (err, rows) => {
+    // Fetch ALL contracts (Active, Expired, Archived) so frontend can filter
+    db.all('SELECT * FROM contracts ORDER BY galiojaIki ASC', [], (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
 
       const contracts = rows.map(row => ({
