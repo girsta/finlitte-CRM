@@ -346,49 +346,47 @@ export default function Dashboard({ user, onLogout, onUserUpdate }: DashboardPro
         return (
           <>
             {/* Dashboard Stats */}
-            {!viewArchived && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div
-                  onClick={() => { setViewArchived(true); setFilterStatus(''); }}
-                  className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex items-center justify-between relative overflow-hidden group hover:shadow-md transition-all duration-300 cursor-pointer"
-                >
-                  <div className="absolute top-0 right-0 w-1 h-full bg-red-500 rounded-l-full opacity-80"></div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Kritiniai / Pasibaigę</p>
-                    <p className="text-4xl font-bold text-slate-800">{stats.red}</p>
-                  </div>
-                  <div className="bg-red-50 p-4 rounded-xl text-red-500 group-hover:bg-red-500 group-hover:text-white transition-colors duration-300">
-                    <XCircle size={28} />
-                  </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div
+                onClick={() => { setViewArchived(true); setFilterStatus(''); }}
+                className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex items-center justify-between relative overflow-hidden group hover:shadow-md transition-all duration-300 cursor-pointer"
+              >
+                <div className="absolute top-0 right-0 w-1 h-full bg-red-500 rounded-l-full opacity-80"></div>
+                <div>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Kritiniai / Pasibaigę</p>
+                  <p className="text-4xl font-bold text-slate-800">{stats.red}</p>
                 </div>
-                <div
-                  onClick={() => { setViewArchived(false); setFilterStatus('expiring'); }}
-                  className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex items-center justify-between relative overflow-hidden group hover:shadow-md transition-all duration-300 cursor-pointer"
-                >
-                  <div className="absolute top-0 right-0 w-1 h-full bg-amber-400 rounded-l-full opacity-80"></div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Baigiasi galiojimas</p>
-                    <p className="text-4xl font-bold text-slate-800">{stats.yellow}</p>
-                  </div>
-                  <div className="bg-amber-50 p-4 rounded-xl text-amber-500 group-hover:bg-amber-400 group-hover:text-white transition-colors duration-300">
-                    <AlertTriangle size={28} />
-                  </div>
-                </div>
-                <div
-                  onClick={() => { setViewArchived(false); setFilterStatus('active'); }}
-                  className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex items-center justify-between relative overflow-hidden group hover:shadow-md transition-all duration-300 cursor-pointer"
-                >
-                  <div className="absolute top-0 right-0 w-1 h-full bg-emerald-500 rounded-l-full opacity-80"></div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Aktyvios sutartys</p>
-                    <p className="text-4xl font-bold text-slate-800">{stats.green}</p>
-                  </div>
-                  <div className="bg-emerald-50 p-4 rounded-xl text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-colors duration-300">
-                    <CheckCircle size={28} />
-                  </div>
+                <div className="bg-red-50 p-4 rounded-xl text-red-500 group-hover:bg-red-500 group-hover:text-white transition-colors duration-300">
+                  <XCircle size={28} />
                 </div>
               </div>
-            )}
+              <div
+                onClick={() => { setViewArchived(false); setFilterStatus('expiring'); }}
+                className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex items-center justify-between relative overflow-hidden group hover:shadow-md transition-all duration-300 cursor-pointer"
+              >
+                <div className="absolute top-0 right-0 w-1 h-full bg-amber-400 rounded-l-full opacity-80"></div>
+                <div>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Baigiasi galiojimas</p>
+                  <p className="text-4xl font-bold text-slate-800">{stats.yellow}</p>
+                </div>
+                <div className="bg-amber-50 p-4 rounded-xl text-amber-500 group-hover:bg-amber-400 group-hover:text-white transition-colors duration-300">
+                  <AlertTriangle size={28} />
+                </div>
+              </div>
+              <div
+                onClick={() => { setViewArchived(false); setFilterStatus('active'); }}
+                className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex items-center justify-between relative overflow-hidden group hover:shadow-md transition-all duration-300 cursor-pointer"
+              >
+                <div className="absolute top-0 right-0 w-1 h-full bg-emerald-500 rounded-l-full opacity-80"></div>
+                <div>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Aktyvios sutartys</p>
+                  <p className="text-4xl font-bold text-slate-800">{stats.green}</p>
+                </div>
+                <div className="bg-emerald-50 p-4 rounded-xl text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-colors duration-300">
+                  <CheckCircle size={28} />
+                </div>
+              </div>
+            </div>
 
             {/* View Toggle Tabs */}
             <div className="flex items-center gap-6 border-b border-slate-200 mb-8">
@@ -538,7 +536,6 @@ export default function Dashboard({ user, onLogout, onUserUpdate }: DashboardPro
                 <option value="">Visi statusai</option>
                 <option value="active">Aktyvūs</option>
                 <option value="expiring">Baigiasi galiojimas</option>
-                <option value="expired">Pasibaigę</option>
               </select>
 
               {(filterSalesperson || filterType || filterStatus) && (

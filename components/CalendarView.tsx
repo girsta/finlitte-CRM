@@ -137,8 +137,8 @@ export default function CalendarView({ contracts, onContractClick }: CalendarVie
                         label = 'Baigiasi'; // Warning: Expiring soon
                         Icon = AlertCircle;
                       } else {
-                        statusClass = 'bg-blue-50 text-blue-700 border-blue-200';
-                        label = 'Terminas'; // Neutral: End date
+                        statusClass = 'bg-emerald-100 text-emerald-800 border-emerald-200';
+                        label = 'Aktyvi';
                       }
 
                       return (
