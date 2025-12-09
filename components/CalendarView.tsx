@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Contract } from '../types';
-import { ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, AlertCircle, Calendar as CalendarIcon } from 'lucide-react';
 
 interface CalendarViewProps {
   contracts: Contract[];
@@ -119,17 +119,32 @@ export default function CalendarView({ contracts, onContractClick }: CalendarVie
                       const expiryDate = new Date(c.galiojaIki);
                       const today = new Date();
                       today.setHours(0, 0, 0, 0);
-                      const isPast = expiryDate < today;
+
+                      // Calculate difference in days
+                      const diffTime = expiryDate.getTime() - today.getTime();
+                      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                      let statusClass = '';
+                      let label = '';
+                      let Icon = CalendarIcon;
+
+                      if (diffDays < 0) {
+                        statusClass = 'bg-red-100 text-red-800 border-red-200';
+                        label = 'Pasibaigė';
+                        Icon = AlertCircle;
+                      } else if (diffDays <= 30) {
+                        statusClass = 'bg-orange-100 text-orange-800 border-orange-200';
+                        label = 'Baigiasi'; // Warning: Expiring soon
+                        Icon = AlertCircle;
+                      } else {
+                        statusClass = 'bg-blue-50 text-blue-700 border-blue-200';
+                        label = 'Terminas'; // Neutral: End date
+                      }
 
                       return (
                         <div
                           key={c.id}
-                          className={`text-xs p-1.5 rounded border truncate cursor-pointer hover:opacity-80 mb-1
-                            ${isPast
-                              ? 'bg-red-100 text-red-800 border-red-200'
-                              : 'bg-orange-100 text-orange-800 border-orange-200'
-                            }
-                          `}
+                          className={`text-xs p-1.5 rounded border truncate cursor-pointer hover:opacity-80 mb-1 ${statusClass}`}
                           title={`${c.draudejas} - ${c.policyNo}`}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -137,8 +152,8 @@ export default function CalendarView({ contracts, onContractClick }: CalendarVie
                           }}
                         >
                           <div className="flex items-center gap-1 font-semibold">
-                            <AlertCircle size={10} />
-                            {isPast ? 'Pasibaigė' : 'Baigiasi'}
+                            <Icon size={10} />
+                            {label}
                           </div>
                           <div className="truncate">{c.draudejas}</div>
                         </div>

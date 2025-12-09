@@ -348,7 +348,10 @@ export default function Dashboard({ user, onLogout, onUserUpdate }: DashboardPro
             {/* Dashboard Stats */}
             {!viewArchived && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex items-center justify-between relative overflow-hidden group hover:shadow-md transition-all duration-300">
+                <div
+                  onClick={() => { setViewArchived(true); setFilterStatus(''); }}
+                  className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex items-center justify-between relative overflow-hidden group hover:shadow-md transition-all duration-300 cursor-pointer"
+                >
                   <div className="absolute top-0 right-0 w-1 h-full bg-red-500 rounded-l-full opacity-80"></div>
                   <div>
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Kritiniai / Pasibaigę</p>
@@ -358,7 +361,10 @@ export default function Dashboard({ user, onLogout, onUserUpdate }: DashboardPro
                     <XCircle size={28} />
                   </div>
                 </div>
-                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex items-center justify-between relative overflow-hidden group hover:shadow-md transition-all duration-300">
+                <div
+                  onClick={() => { setViewArchived(false); setFilterStatus('expiring'); }}
+                  className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex items-center justify-between relative overflow-hidden group hover:shadow-md transition-all duration-300 cursor-pointer"
+                >
                   <div className="absolute top-0 right-0 w-1 h-full bg-amber-400 rounded-l-full opacity-80"></div>
                   <div>
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Baigiasi galiojimas</p>
@@ -368,7 +374,10 @@ export default function Dashboard({ user, onLogout, onUserUpdate }: DashboardPro
                     <AlertTriangle size={28} />
                   </div>
                 </div>
-                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex items-center justify-between relative overflow-hidden group hover:shadow-md transition-all duration-300">
+                <div
+                  onClick={() => { setViewArchived(false); setFilterStatus('active'); }}
+                  className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex items-center justify-between relative overflow-hidden group hover:shadow-md transition-all duration-300 cursor-pointer"
+                >
                   <div className="absolute top-0 right-0 w-1 h-full bg-emerald-500 rounded-l-full opacity-80"></div>
                   <div>
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Aktyvios sutartys</p>
