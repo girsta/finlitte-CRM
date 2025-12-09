@@ -137,30 +137,25 @@ app.post('/logout', (req, res) => {
 
 // Get Active Contracts
 app.get('/api/contracts', isAuthenticated, (req, res) => {
-  // Auto-archive expired contracts (simpler logic: on fetch)
-  const today = new Date().toISOString().split('T')[0];
-  db.run("UPDATE contracts SET is_archived = 1 WHERE galiojaIki < ? AND is_archived = 0", [today], (err) => {
-    if (err) console.error("Auto-archive error:", err);
+  // Auto-delete expired contracts older than 30 days
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const cleanupDate = thirtyDaysAgo.toISOString().split('T')[0];
 
-    // Auto-delete archived/expired contracts older than 30 days
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const cleanupDate = thirtyDaysAgo.toISOString().split('T')[0];
+  db.run("DELETE FROM contracts WHERE galiojaIki < ?", [cleanupDate], (delErr) => {
+    if (delErr) console.error("Auto-delete expired contracts error:", delErr);
 
-    db.run("DELETE FROM contracts WHERE galiojaIki < ?", [cleanupDate], (delErr) => {
-      if (delErr) console.error("Auto-delete expired contracts error:", delErr);
+    // Fetch ALL non-archived contracts (both active and expired)
+    db.all('SELECT * FROM contracts WHERE is_archived = 0 ORDER BY galiojaIki ASC', [], (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
 
-      db.all('SELECT * FROM contracts WHERE is_archived = 0 ORDER BY galiojaIki ASC', [], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
+      const contracts = rows.map(row => ({
+        ...row,
+        notes: row.notes ? JSON.parse(row.notes) : [],
+        is_archived: !!row.is_archived
+      }));
 
-        const contracts = rows.map(row => ({
-          ...row,
-          notes: row.notes ? JSON.parse(row.notes) : [],
-          is_archived: !!row.is_archived
-        }));
-
-        res.json(contracts);
-      });
+      res.json(contracts);
     });
   });
 });

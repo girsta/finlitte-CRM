@@ -77,12 +77,15 @@ export default function Dashboard({ user, onLogout, onUserUpdate }: DashboardPro
   const fetchContracts = async () => {
     setIsLoading(true);
     // Determine endpoint based on whether we are looking at archived list 
-    // BUT if we are in Calendar mode, we might want ALL active contracts.
-    // For simplicity, Dashboard/Calendar fetch active. Archived tab fetches archived.
+    // BUT user complained about mixing "Archived" with "Ended".
+    // "Ended" contracts are just expired contracts that are NOT manually archived yet.
+    // "Active" contracts are valid contracts that are NOT manually archived.
 
-    // Logic: If user specifically toggled "Archived", we fetch archived.
-    // Otherwise default to active.
-    const endpoint = viewArchived ? '/api/contracts/archived' : '/api/contracts';
+    // So for both tabs (Active/Ended), we fetch the normal list of non-archived contracts.
+    // We will filter them client-side in filteredContracts.
+    // We only fetch the specific 'archived' endpoint if we ever want to see manually archived stuff (which might be a separate hidden view now).
+
+    const endpoint = '/api/contracts'; // Fetch all non-archived (Active + Expired)
 
     try {
       const res = await fetch(endpoint);
@@ -266,7 +269,27 @@ export default function Dashboard({ user, onLogout, onUserUpdate }: DashboardPro
       if (filterStatus === 'expired') matchesStatus = status === ExpiryStatus.EXPIRED;
     }
 
-    return matchesSearch && matchesSalesperson && matchesType && matchesStatus;
+    // Updated view logic:
+    // If viewArchived is FALSE (Active tab): Show only Valid + Warning contracts (Non-expired)
+    // If viewArchived is TRUE (Ended tab): Show only Expired contracts
+    // * Manual archives are filtered out at the API level (contracts variable) or we can filter them here if we want to show everything.
+    // Based on user request, "Pasibaigusios" means Ended/Expired.
+
+    // We already fetch `is_archived = 0` (Active + Expired) from /api/contracts
+    // So we just need to split based on date.
+
+    const status = getStatus(c.galiojaIki);
+    let viewMatches = true;
+
+    if (!viewArchived) {
+      // Active Tab: Include Valid and Warning
+      viewMatches = status !== ExpiryStatus.EXPIRED;
+    } else {
+      // Ended Tab: Include Expired
+      viewMatches = status === ExpiryStatus.EXPIRED;
+    }
+
+    return matchesSearch && matchesSalesperson && matchesType && matchesStatus && viewMatches;
   });
 
   const handleExportCSV = () => {
