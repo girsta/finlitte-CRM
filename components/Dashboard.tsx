@@ -322,38 +322,46 @@ export default function Dashboard({ user, onLogout, onUserUpdate }: DashboardPro
             {/* Dashboard Stats */}
             {!viewArchived && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="bg-white rounded-xl shadow-sm border border-red-100 p-6 flex items-center justify-between relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-2 h-full bg-red-500"></div>
+                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex items-center justify-between relative overflow-hidden group hover:shadow-md transition-all duration-300">
+                  <div className="absolute top-0 right-0 w-1 h-full bg-red-500 rounded-l-full opacity-80"></div>
                   <div>
-                    <p className="text-sm font-medium text-gray-500 mb-1">Kritiniai / Pasibaigę</p>
-                    <p className="text-3xl font-bold text-gray-900">{stats.red}</p>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Kritiniai / Pasibaigę</p>
+                    <p className="text-4xl font-bold text-slate-800">{stats.red}</p>
                   </div>
-                  <div className="bg-red-50 p-3 rounded-full text-red-600"><XCircle size={24} /></div>
+                  <div className="bg-red-50 p-4 rounded-xl text-red-500 group-hover:bg-red-500 group-hover:text-white transition-colors duration-300">
+                    <XCircle size={28} />
+                  </div>
                 </div>
-                <div className="bg-white rounded-xl shadow-sm border border-yellow-100 p-6 flex items-center justify-between relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-2 h-full bg-yellow-400"></div>
+                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex items-center justify-between relative overflow-hidden group hover:shadow-md transition-all duration-300">
+                  <div className="absolute top-0 right-0 w-1 h-full bg-amber-400 rounded-l-full opacity-80"></div>
                   <div>
-                    <p className="text-sm font-medium text-gray-500 mb-1">Baigiasi galiojimas</p>
-                    <p className="text-3xl font-bold text-gray-900">{stats.yellow}</p>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Baigiasi galiojimas</p>
+                    <p className="text-4xl font-bold text-slate-800">{stats.yellow}</p>
                   </div>
-                  <div className="bg-yellow-50 p-3 rounded-full text-yellow-600"><AlertTriangle size={24} /></div>
+                  <div className="bg-amber-50 p-4 rounded-xl text-amber-500 group-hover:bg-amber-400 group-hover:text-white transition-colors duration-300">
+                    <AlertTriangle size={28} />
+                  </div>
                 </div>
-                <div className="bg-white rounded-xl shadow-sm border border-green-100 p-6 flex items-center justify-between relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-2 h-full bg-green-500"></div>
+                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex items-center justify-between relative overflow-hidden group hover:shadow-md transition-all duration-300">
+                  <div className="absolute top-0 right-0 w-1 h-full bg-emerald-500 rounded-l-full opacity-80"></div>
                   <div>
-                    <p className="text-sm font-medium text-gray-500 mb-1">Aktyvios sutartys</p>
-                    <p className="text-3xl font-bold text-gray-900">{stats.green}</p>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Aktyvios sutartys</p>
+                    <p className="text-4xl font-bold text-slate-800">{stats.green}</p>
                   </div>
-                  <div className="bg-green-50 p-3 rounded-full text-green-600"><CheckCircle size={24} /></div>
+                  <div className="bg-emerald-50 p-4 rounded-xl text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-colors duration-300">
+                    <CheckCircle size={28} />
+                  </div>
                 </div>
               </div>
             )}
 
             {/* View Toggle Tabs */}
-            <div className="flex items-center gap-4 border-b border-gray-200 mb-6">
+            <div className="flex items-center gap-6 border-b border-slate-200 mb-8">
               <button
                 onClick={() => setViewArchived(false)}
-                className={`pb-3 px-1 flex items-center gap-2 text-sm font-medium transition-colors border-b-2 ${!viewArchived ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+                className={`pb-4 px-2 flex items-center gap-2 text-sm font-semibold transition-all border-b-2 ${!viewArchived
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
                   }`}
               >
                 <LayoutList size={18} />
@@ -361,11 +369,13 @@ export default function Dashboard({ user, onLogout, onUserUpdate }: DashboardPro
               </button>
               <button
                 onClick={() => setViewArchived(true)}
-                className={`pb-3 px-1 flex items-center gap-2 text-sm font-medium transition-colors border-b-2 ${viewArchived ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+                className={`pb-4 px-2 flex items-center gap-2 text-sm font-semibold transition-all border-b-2 ${viewArchived
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
                   }`}
               >
                 <Archive size={18} />
-                Pasibaigusios
+                Pasibaigusios sutartys
               </button>
             </div>
 
@@ -444,14 +454,14 @@ export default function Dashboard({ user, onLogout, onUserUpdate }: DashboardPro
                   />
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-2.5 rounded-lg font-medium transition-colors shadow-sm"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white border border-slate-300 hover:border-blue-400 hover:text-blue-600 text-slate-700 px-5 py-2.5 rounded-lg font-medium transition-all shadow-sm"
                   >
-                    <Upload size={20} />
+                    <Upload size={18} />
                     Įkelti sutartį
                   </button>
                   <button
                     onClick={() => { setEditingContract(undefined); setFormMode('edit'); setIsFormOpen(true); }}
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors shadow-sm"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium transition-all shadow-md shadow-blue-200"
                   >
                     <Plus size={20} />
                     Nauja sutartis

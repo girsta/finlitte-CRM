@@ -36,106 +36,112 @@ export default function ContractList({ user, contracts, onEdit, onDelete, onArch
   const canDelete = user.role === 'admin';
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-left text-sm text-gray-600">
-        <thead className="bg-gray-50 border-b border-gray-200">
+    <div className="overflow-x-auto bg-white rounded-xl shadow-sm border border-slate-200">
+      <table className="w-full text-left text-sm text-slate-600">
+        <thead className="bg-slate-50 border-b border-slate-200">
           <tr>
-            <th className="px-6 py-4 font-semibold text-gray-900">Klientas / Tipas</th>
-            <th className="px-6 py-4 font-semibold text-gray-900">Poliso detalės</th>
-            <th className="px-6 py-4 font-semibold text-gray-900">Galiojimas</th>
-            <th className="px-6 py-4 font-semibold text-gray-900">Finansai</th>
-            <th className="px-6 py-4 font-semibold text-gray-900 text-right">Veiksmai</th>
+            <th className="px-6 py-4 font-bold text-slate-700 uppercase tracking-wider text-xs">Klientas / Tipas</th>
+            <th className="px-6 py-4 font-bold text-slate-700 uppercase tracking-wider text-xs">Poliso detalės</th>
+            <th className="px-6 py-4 font-bold text-slate-700 uppercase tracking-wider text-xs">Būsena</th>
+            <th className="px-6 py-4 font-bold text-slate-700 uppercase tracking-wider text-xs">Finansai</th>
+            <th className="px-6 py-4 font-bold text-slate-700 uppercase tracking-wider text-xs text-right">Veiksmai</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
+        <tbody className="divide-y divide-slate-100">
           {contracts.map((contract) => {
             const status = getStatus(contract.galiojaIki);
             return (
-              <tr key={contract.id} className="hover:bg-gray-50 transition-colors">
+              <tr key={contract.id} className="hover:bg-blue-50/50 transition-colors group">
                 <td className="px-6 py-4">
-                  <div className="font-medium text-gray-900 text-base flex items-center gap-2">
+                  <div className="font-semibold text-slate-900 text-base flex items-center gap-2">
                     {contract.draudejas}
                     {contract.notes && contract.notes.length > 0 && (
                       <button
                         onClick={() => onViewNotes(contract)}
-                        className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100 transition-colors"
-                        title={`${contract.notes.length} pastabos prisegtos`}
+                        className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-100 text-amber-600 hover:bg-amber-200 transition-colors"
+                        title={`${contract.notes.length} pastabos`}
                       >
-                        <StickyNote size={10} className="mr-0.5" />
-                        {contract.notes.length}
+                        <StickyNote size={12} />
                       </button>
                     )}
                   </div>
-                  <div className="text-xs text-gray-500 mt-0.5 inline-flex items-center gap-1">
-                    <span className="bg-gray-200 px-1.5 py-0.5 rounded">{contract.ldGrupe}</span>
-                    <span>Pardavėjas: {contract.pardavejas}</span>
+                  <div className="text-xs text-slate-500 mt-1 inline-flex items-center gap-2">
+                    <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-medium border border-slate-200">
+                      {contract.ldGrupe || 'Nenurodyta'}
+                    </span>
+                    <span className="text-slate-400">|</span>
+                    <span>{contract.pardavejas}</span>
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="font-mono text-gray-900">{contract.policyNo}</div>
-                  <div className="flex items-center gap-1 text-gray-500 text-xs mt-1">
-                    <Box size={12} />
-                    {contract.valstybinisNr}
+                  <div className="font-mono text-slate-700 font-medium tracking-tight bg-slate-50 inline-block px-2 py-0.5 rounded border border-slate-100">
+                    {contract.policyNo}
+                  </div>
+                  <div className="flex items-center gap-1.5 text-slate-500 text-xs mt-1.5">
+                    <Box size={14} className="text-slate-400" />
+                    <span className="font-medium">{contract.valstybinisNr}</span>
                   </div>
                 </td>
                 <td className="px-6 py-4">
                   {contract.is_archived ? (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border bg-gray-100 text-gray-600 border-gray-200">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                      <Archive size={12} />
                       Archyvuota
                     </span>
                   ) : (
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(status)}`}>
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border shadow-sm ${getStatusColor(status)}`}>
                       {status === ExpiryStatus.EXPIRED ? 'Pasibaigę' : status === ExpiryStatus.WARNING ? 'Baigiasi' : 'Aktyvi'}
                     </span>
                   )}
-                  <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                    <Calendar size={12} />
-                    {new Date(contract.galiojaIki).toLocaleDateString()}
+                  <div className="text-xs text-slate-500 mt-1.5 flex items-center gap-1.5 font-medium">
+                    <Calendar size={14} className="text-slate-400" />
+                    IKI: {new Date(contract.galiojaIki).toLocaleDateString()}
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="flex items-center gap-1 text-gray-900 font-medium">
-                    <span className="font-semibold text-gray-900">{contract.metineIsmoka.toFixed(2)} €</span> / metams
+                  <div className="text-slate-900 font-bold text-sm">
+                    {contract.metineIsmoka.toFixed(2)} €
+                    <span className="text-xs font-normal text-slate-400 ml-1">/ met.</span>
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">
+                  <div className="text-xs text-slate-500 mt-1">
                     Vertė: {contract.ismoka.toFixed(2)} €
                   </div>
                 </td>
 
                 <td className="px-6 py-4 text-right">
-                  <div className="flex items-center justify-end gap-2">
+                  <div className="flex items-center justify-end gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => onViewNotes(contract)}
-                      className="p-1.5 hover:bg-yellow-50 text-yellow-600 rounded transition-colors"
-                      title="Žiūrėti pastabas"
+                      className="p-2 hover:bg-amber-50 text-slate-400 hover:text-amber-600 rounded-lg transition-all"
+                      title="Pastabos"
                     >
-                      <StickyNote size={16} />
+                      <StickyNote size={18} />
                     </button>
 
                     <button
                       onClick={() => onViewHistory(contract)}
-                      className="p-1.5 hover:bg-purple-50 text-purple-600 rounded transition-colors"
-                      title="Žiūrėti istoriją"
+                      className="p-2 hover:bg-purple-50 text-slate-400 hover:text-purple-600 rounded-lg transition-all"
+                      title="Istorija"
                     >
-                      <Clock size={16} />
+                      <Clock size={18} />
                     </button>
 
                     {canEdit && (
                       <>
                         <button
                           onClick={() => contract.id && onArchiveToggle(contract.id)}
-                          className="p-1.5 hover:bg-gray-100 text-gray-600 rounded transition-colors"
+                          className="p-2 hover:bg-slate-100 text-slate-400 hover:text-slate-700 rounded-lg transition-all"
                           title={contract.is_archived ? "Atkurti" : "Archyvuoti"}
                         >
-                          {contract.is_archived ? <RefreshCw size={16} /> : <Archive size={16} />}
+                          {contract.is_archived ? <RefreshCw size={18} /> : <Archive size={18} />}
                         </button>
 
                         <button
                           onClick={() => onEdit(contract)}
-                          className="p-1.5 hover:bg-blue-50 text-blue-600 rounded transition-colors"
+                          className="p-2 hover:bg-blue-50 text-slate-400 hover:text-blue-600 rounded-lg transition-all"
                           title="Redaguoti"
                         >
-                          <Edit2 size={16} />
+                          <Edit2 size={18} />
                         </button>
                       </>
                     )}
@@ -143,10 +149,10 @@ export default function ContractList({ user, contracts, onEdit, onDelete, onArch
                     {canDelete && (
                       <button
                         onClick={() => contract.id && onDelete(contract.id)}
-                        className="p-1.5 hover:bg-red-50 text-red-600 rounded transition-colors"
-                        title="Ištrinti negrįžtamai"
+                        className="p-2 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg transition-colors ml-2 border-l border-slate-100 pl-3"
+                        title="Ištrinti"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={18} />
                       </button>
                     )}
                   </div>

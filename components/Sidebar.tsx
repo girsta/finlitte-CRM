@@ -42,44 +42,47 @@ export default function Sidebar({ user, activeView, setActiveView, onLogout, isO
 
       {/* Sidebar Container */}
       <aside className={`
-        fixed inset-y-0 left-0 z-30 w-64 bg-white text-gray-800 border-r border-gray-200 transform transition-transform duration-300 ease-in-out
+        fixed inset-y-0 left-0 z-30 w-72 bg-slate-900 text-white transform transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-        md:relative md:translate-x-0 flex flex-col shadow-xl md:shadow-none
+        md:relative md:translate-x-0 flex flex-col shadow-2xl
       `}>
         {/* Logo Area */}
-        <div className="h-16 flex items-center justify-between px-6 border-b border-gray-100">
-          <div className="flex items-center gap-2">
-            {/* Replaced generic Shield with specific branding color implied by light theme */}
-            <div className="w-8 h-8 flex items-center justify-center bg-blue-600 rounded-lg text-white">
-              <span className="font-bold text-lg">F</span>
+        <div className="h-20 flex items-center justify-between px-6 border-b border-slate-800 bg-slate-950">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl shadow-lg shadow-blue-900/20 text-white">
+              <ShieldCheck size={20} />
             </div>
-            <span className="text-xl font-bold tracking-tight text-gray-900">Finlitte</span>
+            <div>
+              <h1 className="text-xl font-bold tracking-tight text-white leading-none">Finlitte</h1>
+              <span className="text-[10px] text-blue-400 font-medium tracking-wider uppercase">CRM Sistema</span>
+            </div>
           </div>
-          <button onClick={() => setIsOpen(false)} className="md:hidden text-gray-400 hover:text-gray-600">
+          <button onClick={() => setIsOpen(false)} className="md:hidden text-slate-400 hover:text-white transition-colors">
             <X size={24} />
           </button>
         </div>
 
         {/* User Info */}
-        <div className="px-6 py-6 border-b border-gray-100 bg-gray-50/50">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-lg font-bold text-blue-700 border border-blue-200">
-              {(user.full_name || user.username).charAt(0).toUpperCase()}
+        <div className="px-6 py-8 border-b border-slate-800 bg-slate-900/50">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-xl font-bold text-blue-400 border-2 border-slate-700 shadow-inner">
+                {(user.full_name || user.username).charAt(0).toUpperCase()}
+              </div>
+              <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-slate-900 ${user.role === 'admin' ? 'bg-purple-500' : 'bg-emerald-500'}`}></div>
             </div>
             <div className="overflow-hidden">
-              <p className="font-semibold text-gray-900 truncate text-sm" title={user.full_name || user.username}>
-                {user.full_name ? user.full_name : <span className="text-red-500 text-xs">NENUSTATYTA</span>}
+              <p className="font-semibold text-white truncate text-sm tracking-wide" title={user.full_name || user.username}>
+                {user.full_name ? user.full_name : <span className="text-red-400 text-xs italic">Nenustatyta</span>}
               </p>
-              <div className="flex items-center gap-1">
-                <div className={`w-2 h-2 rounded-full ${user.role === 'admin' ? 'bg-purple-500' : 'bg-green-500'}`}></div>
-                <p className="text-xs text-gray-500 uppercase tracking-wider font-medium">{roleMap[user.role] || user.role}</p>
-              </div>
+              <p className="text-xs text-slate-400 uppercase tracking-wider font-medium mt-0.5">{roleMap[user.role] || user.role}</p>
             </div>
           </div>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 py-6 px-3 space-y-1 overflow-y-auto">
+        <nav className="flex-1 py-8 px-4 space-y-1.5 overflow-y-auto">
+          <p className="px-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-4">Pagrindinis</p>
           {filteredItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeView === item.id;
@@ -91,27 +94,28 @@ export default function Sidebar({ user, activeView, setActiveView, onLogout, isO
                   setIsOpen(false);
                 }}
                 className={`
-                  w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
+                  w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 group
                   ${isActive
-                    ? 'bg-blue-50 text-blue-700 border border-blue-100 shadow-sm'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 border border-transparent'
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20'
+                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
                   }
                 `}
               >
-                <Icon size={20} className={isActive ? 'text-blue-600' : 'text-gray-400'} />
+                <Icon size={20} className={`transition-colors ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-blue-400'}`} />
                 {item.label}
+                {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white opacity-50" />}
               </button>
             );
           })}
         </nav>
 
         {/* Logout */}
-        <div className="p-4 border-t border-gray-100">
+        <div className="p-4 border-t border-slate-800 bg-slate-950/30">
           <button
             onClick={onLogout}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors border border-transparent hover:border-red-100"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-all duration-200 group"
           >
-            <LogOut size={20} />
+            <LogOut size={20} className="text-slate-500 group-hover:text-red-400 transition-colors" />
             Atsijungti
           </button>
         </div>
