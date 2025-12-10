@@ -11,9 +11,40 @@ interface ContractListProps {
   onViewHistory: (c: Contract) => void;
   onViewNotes: (c: Contract) => void;
   getStatus: (date: string) => ExpiryStatus;
+  selectedIds?: number[];
+  onSelectionChange?: (ids: number[]) => void;
 }
 
-export default function ContractList({ user, contracts, onEdit, onDelete, onArchiveToggle, onViewHistory, onViewNotes, getStatus }: ContractListProps) {
+export default function ContractList({
+  user,
+  contracts,
+  onEdit,
+  onDelete,
+  onArchiveToggle,
+  onViewHistory,
+  onViewNotes,
+  getStatus,
+  selectedIds = [],
+  onSelectionChange
+}: ContractListProps) {
+
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      const allIds = contracts.map(c => c.id).filter((id): id is number => id !== undefined);
+      onSelectionChange?.(allIds);
+    } else {
+      onSelectionChange?.([]);
+    }
+  };
+
+  const handleSelectOne = (id: number, checked: boolean) => {
+    if (checked) {
+      onSelectionChange?.([...selectedIds, id]);
+    } else {
+      onSelectionChange?.(selectedIds.filter(selectedId => selectedId !== id));
+    }
+  };
+
   if (contracts.length === 0) {
     return (
       <div className="p-12 text-center text-gray-500">
@@ -40,6 +71,14 @@ export default function ContractList({ user, contracts, onEdit, onDelete, onArch
       <table className="w-full text-left text-sm text-slate-600">
         <thead className="bg-slate-50 border-b border-slate-200">
           <tr>
+            <th className="px-6 py-4 w-12">
+              <input
+                type="checkbox"
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+                checked={contracts.length > 0 && selectedIds.length === contracts.length}
+                onChange={handleSelectAll}
+              />
+            </th>
             <th className="px-6 py-4 font-bold text-slate-700 uppercase tracking-wider text-xs">Klientas / Tipas</th>
             <th className="px-6 py-4 font-bold text-slate-700 uppercase tracking-wider text-xs">Poliso detalės</th>
             <th className="px-6 py-4 font-bold text-slate-700 uppercase tracking-wider text-xs">Būsena</th>
@@ -51,7 +90,15 @@ export default function ContractList({ user, contracts, onEdit, onDelete, onArch
           {contracts.map((contract) => {
             const status = getStatus(contract.galiojaIki);
             return (
-              <tr key={contract.id} className="hover:bg-blue-50/50 transition-colors group">
+              <tr key={contract.id} className={`hover:bg-blue-50/50 transition-colors group ${selectedIds.includes(contract.id!) ? 'bg-blue-50/30' : ''}`}>
+                <td className="px-6 py-4">
+                  <input
+                    type="checkbox"
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+                    checked={selectedIds.includes(contract.id!)}
+                    onChange={(e) => contract.id && handleSelectOne(contract.id, e.target.checked)}
+                  />
+                </td>
                 <td className="px-6 py-4">
                   <div className="font-semibold text-slate-900 text-base flex items-center gap-2">
                     {contract.draudejas}

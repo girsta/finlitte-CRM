@@ -45,8 +45,7 @@ export default function CalendarView({ contracts, onContractClick }: CalendarVie
   const getContractsForDay = (day: number) => {
     return contracts.filter(c => {
       const d = new Date(c.galiojaIki);
-      return !c.is_archived &&
-        d.getDate() === day &&
+      return d.getDate() === day &&
         d.getMonth() === currentDate.getMonth() &&
         d.getFullYear() === currentDate.getFullYear();
     });
