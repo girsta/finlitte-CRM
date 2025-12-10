@@ -49,7 +49,7 @@ export default function Sidebar({ user, activeView, setActiveView, onLogout, isO
         {/* Logo Area */}
         <div className="h-20 flex items-center justify-between px-6 border-b border-slate-800 bg-slate-950">
           <div className="flex items-center gap-3">
-            <img src="/finlitte_logo.png" alt="Finlitte Logo" className="w-10 h-10 object-contain" />
+            <img src="/finlitte_logo.png" alt="Finlitte Logo" className="w-14 h-14 object-contain" />
             <div>
               <h1 className="text-xl font-bold tracking-tight text-white leading-none">Finlitte</h1>
               <span className="text-[10px] text-blue-400 font-medium tracking-wider uppercase">CRM Sistema</span>

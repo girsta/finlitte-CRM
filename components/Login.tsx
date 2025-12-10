@@ -115,7 +115,7 @@ export default function Login({ onLogin, setServerError }: LoginProps) {
         {/* Brand Header */}
         <div className="text-center mb-8">
           <div className="w-20 h-20 mx-auto mb-4 bg-white rounded-2xl shadow-sm flex items-center justify-center p-4">
-            <img src="/finlitte_logo.png" alt="Finlitte Logo" className="w-full h-full object-contain" />
+            <img src="/finlitte_login_logo.png" alt="Finlitte Logo" className="w-full h-full object-contain" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Sveiki sugrįžę</h1>
           <p className="text-gray-500 mt-2">Prisijunkite prie CRM sistemos</p>
