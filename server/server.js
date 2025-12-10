@@ -533,6 +533,35 @@ app.post('/api/tasks/:id/comments', isAuthenticated, (req, res) => {
   });
 });
 
+app.delete('/api/tasks/:taskId/comments/:commentId', isAuthenticated, hasRole(['admin']), (req, res) => {
+  const { taskId, commentId } = req.params;
+
+  db.get('SELECT comments FROM tasks WHERE id = ?', [taskId], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(404).json({ error: 'Task not found' });
+
+    let comments = [];
+    try {
+      comments = JSON.parse(row.comments || '[]');
+    } catch (e) {
+      comments = [];
+    }
+
+    const initialLength = comments.length;
+    // Filter out the comment by ID (converting to number since Date.now() is number)
+    comments = comments.filter(c => c.id !== Number(commentId));
+
+    if (comments.length === initialLength) {
+      return res.status(404).json({ error: 'Comment not found' });
+    }
+
+    db.run('UPDATE tasks SET comments = ? WHERE id = ?', [JSON.stringify(comments), taskId], (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ message: 'Comment deleted' });
+    });
+  });
+});
+
 
 app.delete('/api/tasks/:id', isAuthenticated, hasRole(['admin']), (req, res) => {
   db.run("DELETE FROM tasks WHERE id = ?", [req.params.id], function (err) {

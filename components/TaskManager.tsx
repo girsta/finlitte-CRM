@@ -158,6 +158,29 @@ export default function TaskManager({ currentUser }: TaskManagerProps) {
     }
   };
 
+  const handleDeleteComment = async (taskId: number, commentId: number) => {
+    if (!window.confirm("Ar tikrai norite ištrinti šį komentarą?")) return;
+    try {
+      const res = await fetch(`/api/tasks/${taskId}/comments/${commentId}`, {
+        method: 'DELETE'
+      });
+
+      if (res.ok) {
+        setTasks(prev => prev.map(t => {
+          if (t.id === taskId) {
+            return {
+              ...t,
+              comments: t.comments?.filter(c => c.id !== commentId)
+            };
+          }
+          return t;
+        }));
+      }
+    } catch (e) {
+      console.error("Failed to delete comment", e);
+    }
+  };
+
   const canManage = currentUser.role === 'admin';
 
   return (
@@ -285,7 +308,7 @@ export default function TaskManager({ currentUser }: TaskManagerProps) {
                           <div className="space-y-3 mb-4">
                             {task.comments && task.comments.length > 0 ? (
                               task.comments.map(comment => (
-                                <div key={comment.id} className="bg-gray-50 p-3 rounded-lg text-sm">
+                                <div key={comment.id} className="bg-gray-50 p-3 rounded-lg text-sm group relative">
                                   <div className="flex justify-between items-center mb-1">
                                     <span className="font-semibold text-gray-700">
                                       {(() => {
@@ -293,7 +316,18 @@ export default function TaskManager({ currentUser }: TaskManagerProps) {
                                         return u?.full_name || comment.author;
                                       })()}
                                     </span>
-                                    <span className="text-xs text-gray-400">{new Date(comment.timestamp).toLocaleString()}</span>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-xs text-gray-400">{new Date(comment.timestamp).toLocaleString()}</span>
+                                      {canManage && (
+                                        <button
+                                          onClick={() => handleDeleteComment(task.id, comment.id)}
+                                          className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                          title="Ištrinti komentarą"
+                                        >
+                                          <Trash2 size={14} />
+                                        </button>
+                                      )}
+                                    </div>
                                   </div>
                                   <p className="text-gray-600">{comment.text}</p>
                                 </div>
