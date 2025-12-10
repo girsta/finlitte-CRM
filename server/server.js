@@ -7,6 +7,7 @@ const rateLimit = require('express-rate-limit');
 const db = require('./database');
 const path = require('path');
 const fs = require('fs');
+const cron = require('node-cron');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -712,6 +713,22 @@ if (process.env.NODE_ENV === 'production') {
     });
   }
 }
+
+
+// --- Weekly Database Maintenance ---
+// Run cleanup every Sunday at 3:00 AM to vacuum database
+cron.schedule('0 3 * * 0', () => {
+  console.log('Running weekly database maintenance (VACUUM)...');
+  db.serialize(() => {
+    db.run('VACUUM;', (err) => {
+      if (err) {
+        console.error('Maintenance failed:', err.message);
+      } else {
+        console.log('Database vacuumed successfully. Deleted data is permanently removed.');
+      }
+    });
+  });
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
