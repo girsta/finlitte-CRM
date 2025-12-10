@@ -143,7 +143,7 @@ app.get('/api/contracts', isAuthenticated, (req, res) => {
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
   const cleanupDate = sixMonthsAgo.toISOString().split('T')[0];
 
-  db.run("DELETE FROM contracts WHERE galiojaIki < ?", [cleanupDate], (delErr) => {
+  db.run("DELETE FROM contracts WHERE galiojaIki < ? AND is_archived = 0", [cleanupDate], (delErr) => {
     if (delErr) console.error("Auto-delete expired contracts error:", delErr);
 
     // Fetch ALL contracts (Active, Expired, Archived) so frontend can filter
@@ -591,6 +591,7 @@ app.post('/api/webhook/n8n', async (req, res) => {
       const policyNo = getValue(item, 'Poliso Nr.') ||
         getValue(item, 'Poliso Nr') ||
         getValue(item, 'POLISO_NR') ||
+        getValue(item, 'Policy No') ||
         getValue(item, 'policyNo');
 
       if (!policyNo) {
@@ -600,32 +601,32 @@ app.post('/api/webhook/n8n', async (req, res) => {
 
       const contract = {
         // Look for "Draudėjo pavadinimas" OR "Klientas" OR "draudejas"
-        draudejas: getValue(item, 'Draudėjo pavadinimas') || getValue(item, 'KLIENTAS') || getValue(item, 'draudejas') || 'Unknown',
+        draudejas: getValue(item, 'Draudėjo pavadinimas') || getValue(item, 'KLIENTAS') || getValue(item, 'Client Name') || getValue(item, 'draudejas') || 'Unknown',
 
         // Look for "Kuratorius" OR "Brokeris" OR "Pardavejas"
         // Look for "Kuratorius" OR "Brokeris" OR "Pardavejas" OR "Pardavėjo darbuotojas"
-        pardavejas: getValue(item, 'Kuratorius') || getValue(item, 'BROKERIS') || getValue(item, 'Pardavėjo darbuotojas') || getValue(item, 'pardavejas') || '',
+        pardavejas: getValue(item, 'Kuratorius') || getValue(item, 'BROKERIS') || getValue(item, 'Pardavėjo darbuotojas') || getValue(item, 'Salesperson') || getValue(item, 'pardavejas') || '',
 
         // Look for "Draudimo rūšis" OR "Draudimo produktas"
         // Look for "Draudimo rūšis" OR "Draudimo produktas" OR "LD grupės pavadinimas"
-        ldGrupe: (getValue(item, 'Draudimo rūšis') || getValue(item, 'Draudimo produktas') || getValue(item, 'DRAUDIMO_PRODUKTAS') || getValue(item, 'LD grupės pavadinimas') || getValue(item, 'ldGrupe') || '').trim(),
+        ldGrupe: (getValue(item, 'Draudimo rūšis') || getValue(item, 'Draudimo produktas') || getValue(item, 'DRAUDIMO_PRODUKTAS') || getValue(item, 'LD grupės pavadinimas') || getValue(item, 'Type') || getValue(item, 'ldGrupe') || '').trim(),
 
         policyNo: String(policyNo).trim(),
 
         // Look for "Galioja nuo"
-        galiojaNuo: parseDate(getValue(item, 'Galioja nuo') || getValue(item, 'POLISO_PRADZIA') || getValue(item, 'galiojaNuo')),
+        galiojaNuo: parseDate(getValue(item, 'Galioja nuo') || getValue(item, 'POLISO_PRADZIA') || getValue(item, 'Valid From') || getValue(item, 'galiojaNuo')),
 
         // Look for "Galioja iki"
-        galiojaIki: parseDate(getValue(item, 'Galioja iki') || getValue(item, 'POLISO_PABAIGA') || getValue(item, 'galiojaIki')),
+        galiojaIki: parseDate(getValue(item, 'Galioja iki') || getValue(item, 'POLISO_PABAIGA') || getValue(item, 'Valid Until') || getValue(item, 'galiojaIki')),
 
         // Look for "Valstybinis Nr."
-        valstybinisNr: (getValue(item, 'Valstybinis Nr.') || getValue(item, 'Valstybinis Nr') || getValue(item, 'VALSTYBINIS_NR') || getValue(item, 'valstybinisNr') || '').trim(),
+        valstybinisNr: (getValue(item, 'Valstybinis Nr.') || getValue(item, 'Valstybinis Nr') || getValue(item, 'VALSTYBINIS_NR') || getValue(item, 'Reg Number') || getValue(item, 'valstybinisNr') || '').trim(),
 
         // Look for "Metinė įmoka" or "Pasirašyta įmoka"
-        metineIsmoka: Number(getValue(item, 'Metinė įmoka') || getValue(item, 'Pasirašyta įmoka') || getValue(item, 'METINE_IMOKA') || getValue(item, 'metineIsmoka')) || 0,
+        metineIsmoka: Number(getValue(item, 'Metinė įmoka') || getValue(item, 'Pasirašyta įmoka') || getValue(item, 'METINE_IMOKA') || getValue(item, 'Yearly Price') || getValue(item, 'metineIsmoka')) || 0,
 
         // Look for "Draudimo suma"
-        ismoka: Number(getValue(item, 'Draudimo suma') || getValue(item, 'ISMOKA') || getValue(item, 'ismoka')) || 0,
+        ismoka: Number(getValue(item, 'Draudimo suma') || getValue(item, 'ISMOKA') || getValue(item, 'Payout Value') || getValue(item, 'ismoka')) || 0,
 
         // Look for specific typo from your logs "Atnaujini-mo data"
         atnaujinimoData: parseDate(getValue(item, 'Atnaujini-mo data') || getValue(item, 'Atnaujinimo data') || getValue(item, 'ATNAUJINIMO_DATA')),

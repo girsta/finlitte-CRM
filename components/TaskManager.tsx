@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Task, User } from '../types';
-import { CheckCircle, Circle, Trash2, Plus, Calendar, User as UserIcon, Edit2, X, MessageSquare, Send } from 'lucide-react';
+import { CheckCircle, Circle, Trash2, Plus, Calendar, User as UserIcon, Edit2, X, MessageSquare, Send, Info } from 'lucide-react';
 
 interface TaskManagerProps {
   currentUser: User;
@@ -166,6 +166,10 @@ export default function TaskManager({ currentUser }: TaskManagerProps) {
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Užduočių valdymas</h2>
           <p className="text-gray-500">Sekite užduotis ir darbus.</p>
+          <div className="flex items-center gap-1.5 mt-2 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg text-xs font-medium inline-block border border-blue-100">
+            <Info size={14} />
+            Atliktos užduotys rodomos 7 dienas, vėliau automatiškai ištrinamos.
+          </div>
         </div>
         {canManage && !isFormOpen && (
           <button
@@ -231,10 +235,10 @@ export default function TaskManager({ currentUser }: TaskManagerProps) {
             const isOverdue = task.due_date ? new Date(task.due_date) < new Date() && task.status !== 'completed' : false;
             return (
               <div key={task.id} className={`bg-white p-4 rounded-xl shadow-sm border transition-all ${task.status === 'completed'
-                  ? 'border-gray-200 bg-gray-50'
-                  : isOverdue
-                    ? 'border-red-300 bg-red-50'
-                    : 'border-blue-100'
+                ? 'border-gray-200 bg-gray-50'
+                : isOverdue
+                  ? 'border-red-300 bg-red-50'
+                  : 'border-blue-100'
                 }`}>
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-3 flex-1">

@@ -49,9 +49,7 @@ export default function Sidebar({ user, activeView, setActiveView, onLogout, isO
         {/* Logo Area */}
         <div className="h-20 flex items-center justify-between px-6 border-b border-slate-800 bg-slate-950">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl shadow-lg shadow-blue-900/20 text-white">
-              <ShieldCheck size={20} />
-            </div>
+            <img src="/finlitte_logo.png" alt="Finlitte Logo" className="w-10 h-10 object-contain" />
             <div>
               <h1 className="text-xl font-bold tracking-tight text-white leading-none">Finlitte</h1>
               <span className="text-[10px] text-blue-400 font-medium tracking-wider uppercase">CRM Sistema</span>
