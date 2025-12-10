@@ -116,6 +116,7 @@ export default function CalendarView({ contracts, onContractClick }: CalendarVie
                   <div className="space-y-1">
                     {dayContracts.map(c => {
                       const expiryDate = new Date(c.galiojaIki);
+                      expiryDate.setHours(0, 0, 0, 0);
                       const today = new Date();
                       today.setHours(0, 0, 0, 0);
 
