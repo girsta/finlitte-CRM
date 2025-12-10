@@ -137,10 +137,10 @@ app.post('/logout', (req, res) => {
 
 // Get Active Contracts
 app.get('/api/contracts', isAuthenticated, (req, res) => {
-  // Auto-delete expired contracts older than 30 days
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const cleanupDate = thirtyDaysAgo.toISOString().split('T')[0];
+  // Auto-delete expired contracts older than 6 months
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+  const cleanupDate = sixMonthsAgo.toISOString().split('T')[0];
 
   db.run("DELETE FROM contracts WHERE galiojaIki < ?", [cleanupDate], (delErr) => {
     if (delErr) console.error("Auto-delete expired contracts error:", delErr);

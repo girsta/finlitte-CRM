@@ -604,6 +604,16 @@ export default function Dashboard({ user, onLogout, onUserUpdate }: DashboardPro
                             }
                         </div>
 
+                        {/* Retention Policy Notice */}
+                        {activeTab === 'ended' && (
+                            <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl mb-6 text-sm">
+                                <AlertTriangle size={20} className="shrink-0" />
+                                <p>
+                                    <strong>Dėmesio:</strong> Pasibaigusios sutartys, kurios per 6 mėnesius nebus ištrintos arba archyvuotos, bus ištrintos automatiškai visam laikui.
+                                </p>
+                            </div>
+                        )}
+
                         {/* Contract List */}
                         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                             <ContractList
