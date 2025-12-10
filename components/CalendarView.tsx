@@ -130,7 +130,7 @@ export default function CalendarView({ contracts, onContractClick }: CalendarVie
 
                       if (diffDays < 0) {
                         statusClass = 'bg-red-100 text-red-800 border-red-200';
-                        label = 'Pasibaigė';
+                        label = 'Nebegalioja';
                         Icon = AlertCircle;
                       } else if (diffDays <= 30) {
                         statusClass = 'bg-orange-100 text-orange-800 border-orange-200';

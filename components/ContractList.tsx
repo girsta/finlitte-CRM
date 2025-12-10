@@ -157,7 +157,7 @@ export default function ContractList({
                       </span>
                     ) : (
                       <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border shadow-sm ${getStatusColor(status)}`}>
-                        {status === ExpiryStatus.EXPIRED ? 'Pasibaigę' : status === ExpiryStatus.WARNING ? 'Baigiasi' : 'Aktyvi'}
+                        {status === ExpiryStatus.EXPIRED ? 'Nebegalioja' : status === ExpiryStatus.WARNING ? 'Baigiasi' : 'Aktyvi'}
                       </span>
                     )}
                     <div className="text-xs text-slate-500 mt-1.5 flex items-center gap-1.5 font-medium">

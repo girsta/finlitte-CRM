@@ -367,7 +367,7 @@ export default function Dashboard({ user, onLogout, onUserUpdate }: DashboardPro
                             >
                                 <div className="absolute top-0 right-0 w-1 h-full bg-red-500 rounded-l-full opacity-80"></div>
                                 <div>
-                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Kritiniai / Pasibaigę</p>
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Kritiniai / Nebegalioja</p>
                                     <p className="text-4xl font-bold text-slate-800">{stats.red}</p>
                                 </div>
                                 <div className="bg-red-50 p-4 rounded-xl text-red-500 group-hover:bg-red-500 group-hover:text-white transition-colors duration-300">
