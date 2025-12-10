@@ -347,7 +347,7 @@ export default function Dashboard({ user, onLogout, onUserUpdate }: DashboardPro
                 return <CalendarView contracts={contracts} onContractClick={(c) => { setEditingContract(c); setFormMode('view'); setIsFormOpen(true); }} />;
 
             case 'users':
-                return user.role === 'admin' ? <UserManagement currentUser={user} /> : <div className="text-red-500">Prieiga uždrausta</div>;
+                return user.role === 'admin' ? <UserManagement currentUser={user} onUserUpdate={onUserUpdate} /> : <div className="text-red-500">Prieiga uždrausta</div>;
 
             case 'tasks':
                 return <TaskManager currentUser={user} />;

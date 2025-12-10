@@ -4,6 +4,7 @@ import { Trash2, UserPlus, Shield, UserCheck, Eye, Edit2, X } from 'lucide-react
 
 interface UserManagementProps {
   currentUser: User;
+  onUserUpdate?: (user: User) => void;
 }
 
 interface DBUser {
@@ -13,7 +14,7 @@ interface DBUser {
   role: 'admin' | 'sales' | 'viewer';
 }
 
-export default function UserManagement({ currentUser }: UserManagementProps) {
+export default function UserManagement({ currentUser, onUserUpdate }: UserManagementProps) {
   const [users, setUsers] = useState<DBUser[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -63,6 +64,18 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
       });
 
       if (res.ok) {
+
+        // If updating self, update global state
+        if (editingUser && editingUser.id === currentUser.id && onUserUpdate) {
+          onUserUpdate({
+            ...currentUser,
+            username: newUsername,
+            full_name: newFullName,
+            role: newRole,
+            isAdmin: newRole === 'admin'
+          });
+        }
+
         resetForm();
         fetchUsers();
         alert(editingUser ? "Vartotojas sėkmingai atnaujintas" : "Vartotojas sėkmingai sukurtas");
