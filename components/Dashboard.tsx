@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Contract, User, ExpiryStatus } from '../types';
-import { Menu, Plus, Search, AlertTriangle, CheckCircle, XCircle, Archive, LayoutList, Download, History, Filter, Upload, Trash2 } from 'lucide-react';
+import { Menu, Plus, Search, AlertTriangle, CheckCircle, XCircle, Archive, LayoutList, Download, History, Filter, Upload, Trash2, Clock } from 'lucide-react';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import ContractList from './ContractList';
@@ -43,8 +43,8 @@ export default function Dashboard({ user, onLogout, onUserUpdate }: DashboardPro
     const [isLoading, setIsLoading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Toggle between Active and Archived views within the Dashboard tab
-    const [viewArchived, setViewArchived] = useState(false);
+    // Dashboard Tabs: 'active' | 'ended' | 'archived'
+    const [activeTab, setActiveTab] = useState<'active' | 'ended' | 'archived'>('active');
 
     // Load Search History on Mount
     useEffect(() => {
@@ -77,16 +77,9 @@ export default function Dashboard({ user, onLogout, onUserUpdate }: DashboardPro
 
     const fetchContracts = async () => {
         setIsLoading(true);
-        // Determine endpoint based on whether we are looking at archived list 
-        // BUT user complained about mixing "Archived" with "Ended".
-        // "Ended" contracts are just expired contracts that are NOT manually archived yet.
-        // "Active" contracts are valid contracts that are NOT manually archived.
-
-        // So for both tabs (Active/Ended), we fetch the normal list of non-archived contracts.
-        // We will filter them client-side in filteredContracts.
-        // We only fetch the specific 'archived' endpoint if we ever want to see manually archived stuff (which might be a separate hidden view now).
-
-        const endpoint = '/api/contracts'; // Fetch all non-archived (Active + Expired)
+        // Fetch ALL contracts (Active + Expired + Archived)
+        // Server endpoint /api/contracts returns everything
+        const endpoint = '/api/contracts';
 
         try {
             const res = await fetch(endpoint);
@@ -106,9 +99,7 @@ export default function Dashboard({ user, onLogout, onUserUpdate }: DashboardPro
 
     useEffect(() => {
         fetchContracts();
-    }, [viewArchived, activeView]);
-    // Refetch when view changes to ensure fresh data for calendar etc, 
-    // though optimally we could cache.
+    }, [activeTab, activeView]);
 
     const handleSave = async (contract: Contract) => {
         try {
@@ -152,7 +143,7 @@ export default function Dashboard({ user, onLogout, onUserUpdate }: DashboardPro
             // Optimistic update
             setContracts(prev => prev.filter(c => !selectedContractIds.includes(c.id!)));
 
-            // Send individual delete requests (or implementing a bulk delete endpoint would be better)
+            // Send individual delete requests
             await Promise.all(selectedContractIds.map(id =>
                 fetch(`/api/contracts/${id}`, { method: 'DELETE' })
             ));
@@ -161,7 +152,7 @@ export default function Dashboard({ user, onLogout, onUserUpdate }: DashboardPro
         } catch (e) {
             console.error("Bulk delete failed", e);
             alert("Klaida trinant sutartis");
-            fetchContracts(); // Revert on error
+            fetchContracts();
         }
     };
 
@@ -169,7 +160,8 @@ export default function Dashboard({ user, onLogout, onUserUpdate }: DashboardPro
         try {
             const res = await fetch(`/api/contracts/${id}/archive`, { method: 'POST' });
             if (res.ok) {
-                setContracts(prev => prev.filter(c => c.id !== id));
+                // Re-fetch to update state correctly
+                fetchContracts();
             }
         } catch (e) {
             console.error("Archive toggle failed", e);
@@ -233,27 +225,29 @@ export default function Dashboard({ user, onLogout, onUserUpdate }: DashboardPro
 
     const getStatus = (dateStr: string): ExpiryStatus => {
         const today = new Date();
-        today.setHours(0, 0, 0, 0); // Normalize today to midnight
+        today.setHours(0, 0, 0, 0);
 
         const expiry = new Date(dateStr);
-        // Normalize expiry to midnight to ensure fair comparison
         expiry.setHours(0, 0, 0, 0);
 
         const diffTime = expiry.getTime() - today.getTime();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-        if (diffDays < 0) return ExpiryStatus.EXPIRED; // Strictly past dates
-        if (diffDays <= 30) return ExpiryStatus.WARNING; // Expiring in the next 30 days
+        if (diffDays < 0) return ExpiryStatus.EXPIRED;
+        if (diffDays <= 30) return ExpiryStatus.WARNING;
         return ExpiryStatus.VALID;
     };
 
     const stats = useMemo(() => {
         const s = { red: 0, yellow: 0, green: 0, total: contracts.length };
         contracts.forEach(c => {
-            const status = getStatus(c.galiojaIki);
-            if (status === ExpiryStatus.EXPIRED) s.red++;
-            else if (status === ExpiryStatus.WARNING) s.yellow++;
-            else s.green++;
+            // Logic for stats: Only count NON-ARCHIVED contracts for the status cards
+            if (!c.is_archived) {
+                const status = getStatus(c.galiojaIki);
+                if (status === ExpiryStatus.EXPIRED) s.red++;
+                else if (status === ExpiryStatus.WARNING) s.yellow++;
+                else s.green++;
+            }
         });
         return s;
     }, [contracts]);
@@ -262,6 +256,13 @@ export default function Dashboard({ user, onLogout, onUserUpdate }: DashboardPro
     const [filterSalesperson, setFilterSalesperson] = useState('');
     const [filterType, setFilterType] = useState('');
     const [filterStatus, setFilterStatus] = useState('');
+
+    // Reset filters on tab change
+    useEffect(() => {
+        setFilterSalesperson('');
+        setFilterType('');
+        setFilterStatus('');
+    }, [activeTab]);
 
     // Unique values for dropdowns
     const uniqueSalespersons = useMemo(() => {
@@ -291,27 +292,18 @@ export default function Dashboard({ user, onLogout, onUserUpdate }: DashboardPro
             if (filterStatus === 'expired') matchesStatus = status === ExpiryStatus.EXPIRED;
         }
 
-        // Updated view logic:
-        // If viewArchived is FALSE (Active tab): Show only Valid + Warning contracts (Non-expired)
-        // If viewArchived is TRUE (Ended tab): Show only Expired contracts
-        // * Manual archives are filtered out at the API level (contracts variable) or we can filter them here if we want to show everything.
-        // Based on user request, "Pasibaigusios" means Ended/Expired.
-
-        // We already fetch `is_archived = 0` (Active + Expired) from /api/contracts
-        // So we just need to split based on date.
-
         const status = getStatus(c.galiojaIki);
         let viewMatches = true;
 
-        if (!viewArchived) {
-            // Active Tab: Include Valid and Warning AND Not Manually Archived
-            // We hide manually archived active contracts to respect the archive action.
-            viewMatches = status !== ExpiryStatus.EXPIRED && !c.is_archived;
-        } else {
-            // Ended Tab: Include Expired
-            // We show ALL expired contracts, even if they were marked as archived (manually or by previous system), 
-            // so the user sees all history.
-            viewMatches = status === ExpiryStatus.EXPIRED;
+        if (activeTab === 'active') {
+            // Active Tab: Non-Archived AND (Valid OR Warning)
+            viewMatches = !c.is_archived && status !== ExpiryStatus.EXPIRED;
+        } else if (activeTab === 'ended') {
+            // Ended Tab: Non-Archived AND Expired
+            viewMatches = !c.is_archived && status === ExpiryStatus.EXPIRED;
+        } else if (activeTab === 'archived') {
+            // Archived Tab: All Archived
+            viewMatches = !!c.is_archived;
         }
 
         return matchesSearch && matchesSalesperson && matchesType && matchesStatus && viewMatches;
@@ -340,7 +332,7 @@ export default function Dashboard({ user, onLogout, onUserUpdate }: DashboardPro
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.setAttribute("href", url);
-        link.setAttribute("download", `finlitte_contracts_${viewArchived ? 'archived' : 'active'}.csv`);
+        link.setAttribute("download", `finlitte_contracts_${activeTab}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -370,7 +362,7 @@ export default function Dashboard({ user, onLogout, onUserUpdate }: DashboardPro
                         {/* Dashboard Stats */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                             <div
-                                onClick={() => { setViewArchived(true); setFilterStatus(''); }}
+                                onClick={() => { setActiveTab('ended'); }}
                                 className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex items-center justify-between relative overflow-hidden group hover:shadow-md transition-all duration-300 cursor-pointer"
                             >
                                 <div className="absolute top-0 right-0 w-1 h-full bg-red-500 rounded-l-full opacity-80"></div>
@@ -383,7 +375,7 @@ export default function Dashboard({ user, onLogout, onUserUpdate }: DashboardPro
                                 </div>
                             </div>
                             <div
-                                onClick={() => { setViewArchived(false); setFilterStatus('expiring'); }}
+                                onClick={() => { setActiveTab('active'); setFilterStatus('expiring'); }}
                                 className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex items-center justify-between relative overflow-hidden group hover:shadow-md transition-all duration-300 cursor-pointer"
                             >
                                 <div className="absolute top-0 right-0 w-1 h-full bg-amber-400 rounded-l-full opacity-80"></div>
@@ -396,7 +388,7 @@ export default function Dashboard({ user, onLogout, onUserUpdate }: DashboardPro
                                 </div>
                             </div>
                             <div
-                                onClick={() => { setViewArchived(false); setFilterStatus('active'); }}
+                                onClick={() => { setActiveTab('active'); setFilterStatus('active'); }}
                                 className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex items-center justify-between relative overflow-hidden group hover:shadow-md transition-all duration-300 cursor-pointer"
                             >
                                 <div className="absolute top-0 right-0 w-1 h-full bg-emerald-500 rounded-l-full opacity-80"></div>
@@ -410,11 +402,11 @@ export default function Dashboard({ user, onLogout, onUserUpdate }: DashboardPro
                             </div>
                         </div>
 
-                        {/* View Toggle Tabs */}
-                        <div className="flex items-center gap-6 border-b border-slate-200 mb-8">
+                        {/* View Toggle Tabs (3 Tabs) */}
+                        <div className="flex items-center gap-6 border-b border-slate-200 mb-8 overflow-x-auto">
                             <button
-                                onClick={() => setViewArchived(false)}
-                                className={`pb-4 px-2 flex items-center gap-2 text-sm font-semibold transition-all border-b-2 ${!viewArchived
+                                onClick={() => setActiveTab('active')}
+                                className={`pb-4 px-2 flex items-center gap-2 text-sm font-semibold transition-all border-b-2 whitespace-nowrap ${activeTab === 'active'
                                     ? 'border-blue-600 text-blue-600'
                                     : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
                                     }`}
@@ -423,14 +415,24 @@ export default function Dashboard({ user, onLogout, onUserUpdate }: DashboardPro
                                 Aktyvios sutartys
                             </button>
                             <button
-                                onClick={() => setViewArchived(true)}
-                                className={`pb-4 px-2 flex items-center gap-2 text-sm font-semibold transition-all border-b-2 ${viewArchived
+                                onClick={() => setActiveTab('ended')}
+                                className={`pb-4 px-2 flex items-center gap-2 text-sm font-semibold transition-all border-b-2 whitespace-nowrap ${activeTab === 'ended'
+                                    ? 'border-blue-600 text-blue-600'
+                                    : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+                                    }`}
+                            >
+                                <Clock size={18} />
+                                Pasibaigusios sutartys
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('archived')}
+                                className={`pb-4 px-2 flex items-center gap-2 text-sm font-semibold transition-all border-b-2 whitespace-nowrap ${activeTab === 'archived'
                                     ? 'border-blue-600 text-blue-600'
                                     : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
                                     }`}
                             >
                                 <Archive size={18} />
-                                Pasibaigusios sutartys
+                                Archyvuotos
                             </button>
                         </div>
 
@@ -523,7 +525,7 @@ export default function Dashboard({ user, onLogout, onUserUpdate }: DashboardPro
                             </button>
 
 
-                            {canCreate && !viewArchived && (
+                            {canCreate && activeTab === 'active' && (
                                 <div className="flex items-center gap-2 w-full sm:w-auto">
                                     <input
                                         type="file"
@@ -575,15 +577,20 @@ export default function Dashboard({ user, onLogout, onUserUpdate }: DashboardPro
                                 {uniqueTypes.map(t => <option key={t} value={t}>{t}</option>)}
                             </select>
 
-                            <select
-                                value={filterStatus}
-                                onChange={(e) => setFilterStatus(e.target.value)}
-                                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                            >
-                                <option value="">Visi statusai</option>
-                                <option value="active">Aktyvūs</option>
-                                <option value="expiring">Baigiasi galiojimas</option>
-                            </select>
+                            {/* Status Filter - Only show for Active tab */}
+                            {
+                                activeTab === 'active' && (
+                                    <select
+                                        value={filterStatus}
+                                        onChange={(e) => setFilterStatus(e.target.value)}
+                                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                    >
+                                        <option value="">Visi statusai</option>
+                                        <option value="active">Aktyvūs</option>
+                                        <option value="expiring">Baigiasi galiojimas</option>
+                                    </select>
+                                )
+                            }
 
                             {
                                 (filterSalesperson || filterType || filterStatus) && (
